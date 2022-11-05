@@ -1,0 +1,14 @@
+{
+    "1234":{
+        "users": ["a","b"],
+        "created_at": "2022/11/2 22:00:15",
+        "someone_left": false,
+        "agreements": 1
+    },
+    "5678":{
+        "users": ["c","d"],
+        "created_at": "2022/11/2",
+        "someone_left": true,
+        "agreements": 0 
+    }
+}
