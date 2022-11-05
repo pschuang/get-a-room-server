@@ -83,6 +83,13 @@ io.on('connection', (socket) => {
     // console.log('socket room_id:', socket.room_id)
   })
 
+  // 收到 send-message-to-friend 後轉發
+  socket.on('send-message-to-friend', (data) => {
+    console.log('send-message-to-friend: ', data)
+    const { roomId, message, userId } = data
+    socket.to(roomId).emit('receive-message-from-friend', { userId, message })
+  })
+
   // 告訴 server 自己是哪個 user
   socket.on('user-id', (user_id) => {
     console.log('user id:', user_id)
@@ -90,7 +97,9 @@ io.on('connection', (socket) => {
     users[socket.user_id] = socket
   })
 
+  // client 端點擊 repliers 發送 create room 事件後
   socket.on('create-room', (data) => {
+    console.log('data: ', data)
     // data: {'counterpart': 2}
     // 如果前端選的 user 目前不在線上，則不能建立聊天室
     if (!users[data.counterpart]) {
@@ -99,8 +108,6 @@ io.on('connection', (socket) => {
       })
       return
     }
-
-    console.log('data: ', data)
 
     // 1. 自己管理 room
     let roomId = uuidv4()
@@ -126,7 +133,15 @@ io.on('connection', (socket) => {
       // 回傳給聊天對象 roomId 以及 自己的 id
       roomId,
       counterpart: parseInt(socket.user_id),
+      isPassive: true, // 被選中的人是多回傳 isPassive: true
     })
+  })
+
+  // client 端點擊好友發送 join-room 事件
+  socket.on('join-room', (data) => {
+    console.log('data: ', data)
+    const { roomId } = data
+    socket.join(roomId)
   })
 })
 
