@@ -1,7 +1,7 @@
 const router = require('express').Router()
 
-const { getFriends } = require('../controllers/chatroom_controller')
+const { getMessages } = require('../controllers/chatroom_controller')
 
-router.route('/chatroom').get(getFriends)
+router.route('/chatroom/messages/:roomId').get(getMessages)
 
 module.exports = router

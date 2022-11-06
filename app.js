@@ -15,7 +15,11 @@ app.use(express.json())
 const server = http.createServer(app)
 
 // API routes
-app.use('/api/' + API_VERSION, [require('./routes/chatroom_route')])
+app.use('/api/' + API_VERSION, [
+  require('./routes/chatroom_route'),
+  require('./routes/friends_route'),
+  require('./routes/questions_route'),
+])
 
 const io = new Server(server, {
   cors: {
@@ -141,7 +145,10 @@ io.on('connection', (socket) => {
   socket.on('join-room', (data) => {
     console.log('data: ', data)
     const { roomId } = data
+    // TODO: 在 chatroom 點選另外一個朋友之後要leave 前一個 room 再 join 後一個 room
+    // socket.leaveAll()
     socket.join(roomId)
+    // socket.emit('join-room-ok')
   })
 })
 

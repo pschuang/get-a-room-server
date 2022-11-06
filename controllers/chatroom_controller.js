@@ -1,13 +1,19 @@
 require('dotenv').config
 // const cache = require('../util/cache')
 
-const getFriends = async (req, res) => {
-  const users = await cache.hgetall('1234')
-  console.log(users)
-  const arr = users.users.split(',')
-  console.log(arr)
+const getMessages = async (req, res) => {
 
-  res.send('Hello')
+  const { roomId } = req.params
+  console.log('room id: ', roomId)
+  const messages = [
+    { userId: '1', message: '哈囉你好嗎' },
+    { userId: '2', message: '我很好' },
+    { userId: '1', message: 'QQ 我今天不想 coding' },
+    { userId: '2', message: '要不要出去玩?' },
+    { userId: '1', message: '好!' },
+  ]
+
+  res.json({ messages })
 }
 
-module.exports = { getFriends }
+module.exports = { getMessages }
