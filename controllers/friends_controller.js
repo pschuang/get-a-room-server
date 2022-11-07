@@ -1,5 +1,5 @@
 require('dotenv').config
-const Friends = require('../models/friend_model')
+const Friends = require('../models/friends_model')
 // const cache = require('../util/cache')
 
 const getFriends = async (req, res) => {
