@@ -1,4 +1,5 @@
 require('dotenv').config
+const Questions = require('../models/questions_model')
 
 const getQuestions = async (req, res) => {
   const questions = [
@@ -26,38 +27,42 @@ const getQuestions = async (req, res) => {
   res.json({ questions })
 }
 
-const getQuestionsDetails = (req, res) => {
-  const { questionId } = req.query
+const getQuestionsDetails = async (req, res) => {
+  const { questionId } = req.params
   console.log(questionId)
-  const questionsDetails = {
-    content: '你喜歡哪一家珍奶?',
-    repliers: [
-      {
-        userId: 1,
-        isFriend: false,
-        roomId: null,
-        answer: '五十嵐 ...',
-        nickname: 'user 1',
-        pictureURL: 'https://avatars.githubusercontent.com/u/105725219?v=4',
-      },
-      {
-        userId: 2,
-        isFriend: false,
-        roomId: null,
-        answer: '珍煮丹...',
-        nickname: 'user 2',
-        pictureURL: 'https://avatars.githubusercontent.com/u/105725219?v=4',
-      },
-      {
-        userId: 3,
-        isFriend: true,
-        roomId: '1234',
-        answer: '一沐日...',
-        nickname: 'user 3',
-        pictureURL: 'https://avatars.githubusercontent.com/u/105725219?v=4',
-      },
-    ],
-  }
+  // mock data 長相
+  // const questionsDetails = {
+  //   content: '你喜歡哪一家珍奶?',
+  //   repliers: [
+  //     {
+  //       userId: 1,
+  //       isFriend: false,
+  //       roomId: null,
+  //       answer: '五十嵐 ...',
+  //       nickname: 'user 1',
+  //       pictureURL: 'https://avatars.githubusercontent.com/u/105725219?v=4',
+  //     },
+  //     {
+  //       userId: 2,
+  //       isFriend: false,
+  //       roomId: null,
+  //       answer: '珍煮丹...',
+  //       nickname: 'user 2',
+  //       pictureURL: 'https://avatars.githubusercontent.com/u/105725219?v=4',
+  //     },
+  //     {
+  //       userId: 3,
+  //       isFriend: true,
+  //       roomId: '1234',
+  //       answer: '一沐日...',
+  //       nickname: 'user 3',
+  //       pictureURL: 'https://avatars.githubusercontent.com/u/105725219?v=4',
+  //     },
+  //   ],
+  // }
+
+  const questionsDetails = await Questions.getQuestionsDetails(questionId)
+
   res.json(questionsDetails)
 }
 
