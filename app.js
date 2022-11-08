@@ -7,6 +7,7 @@ const app = express()
 const http = require('http')
 const { Server } = require('socket.io')
 const { v4: uuidv4 } = require('uuid')
+const Chatroom = require('./models/chatroom_model')
 
 // CORS allow all
 app.use(cors())
@@ -34,13 +35,6 @@ let users = {}
 io.on('connection', (socket) => {
   console.log(`socket ${socket.id} is connected`)
 
-  // 一但連線，加入 users 列表
-  // const user = { name: Math.floor(Math.random() * 5), id: socket.id }
-  // io.to(socket.id).emit('user', user) // 回傳自己的 name
-  // console.log(user)
-  // users.push(user)
-  // io.emit('users', users)
-
   // disconnect
   socket.on('disconnect', () => {
     console.log('Got disconnected')
@@ -63,8 +57,8 @@ io.on('connection', (socket) => {
       console.log('no counterpart selected!')
       return
     }
-    // 1. 自己管 room
 
+    // 1. 自己管 room
     let members = rooms[msg.roomId].members
     console.log('members: ', members)
     if (members[0] == socket.user_id) {
@@ -91,6 +85,11 @@ io.on('connection', (socket) => {
   socket.on('send-message-to-friend', (data) => {
     console.log('send-message-to-friend: ', data)
     const { roomId, message, userId } = data
+
+    // 寫進資料庫
+    Chatroom.createMessage(userId, message, roomId)
+
+    // 轉發
     socket.to(roomId).emit('receive-message-from-friend', { userId, message })
   })
 
