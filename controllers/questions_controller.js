@@ -2,68 +2,50 @@ require('dotenv').config
 const Questions = require('../models/questions_model')
 
 const getQuestions = async (req, res) => {
-  const questions = [
-    {
-      userId: 3,
-      roomId: '5566',
-      nickname: 'Japopo',
-      pictureURL: 'https://pschuang.github.io/images/capybara.svg',
-    },
-    {
-      userId: 4,
-      roomId: '5678',
-      nickname: 'Shiela',
-      pictureURL:
-        'https://i.pinimg.com/736x/e1/ad/40/e1ad406c381e4788ef6851e95d677afc.jpg',
-    },
-    {
-      userId: 5,
-      roomId: '5566',
-      nickname: 'Ramona',
-      pictureURL: 'https://avatars.githubusercontent.com/u/105725219?v=4',
-    },
-  ]
+  const paging = req.query.paging ? parseInt(req.query.paging) : 0
+  if (paging < 0 || isNaN(paging)) {
+    return res.status(400).json({ error: 'wrong parameter' })
+  }
+  console.log(paging)
 
-  res.json({ questions })
+  // 定義每頁取的筆數 & 每次撈資料筆數
+  const questionsPerPage = 8
+  const questionsPerQuery = 9
+
+  const questions = await Questions.getQuestions(
+    questionsPerQuery,
+    questionsPerPage * paging
+  )
+
+  // 每個問題加上 replies 個數
+  for (const question of questions) {
+    const replyCounts = await Questions.GetReplyCounts(question.id)
+    question.reply_counts = replyCounts[0].reply_counts
+    delete question.category_id
+  }
+
+  const data =
+    questions.length === questionsPerQuery
+      ? { questions, next_paging: paging + 1 }
+      : { questions }
+  return res.json(data)
 }
 
 const getQuestionsDetails = async (req, res) => {
   const { questionId } = req.params
   console.log(questionId)
-  // mock data 長相
-  // const questionsDetails = {
-  //   content: '你喜歡哪一家珍奶?',
-  //   repliers: [
-  //     {
-  //       userId: 1,
-  //       isFriend: false,
-  //       roomId: null,
-  //       answer: '五十嵐 ...',
-  //       nickname: 'user 1',
-  //       pictureURL: 'https://avatars.githubusercontent.com/u/105725219?v=4',
-  //     },
-  //     {
-  //       userId: 2,
-  //       isFriend: false,
-  //       roomId: null,
-  //       answer: '珍煮丹...',
-  //       nickname: 'user 2',
-  //       pictureURL: 'https://avatars.githubusercontent.com/u/105725219?v=4',
-  //     },
-  //     {
-  //       userId: 3,
-  //       isFriend: true,
-  //       roomId: '1234',
-  //       answer: '一沐日...',
-  //       nickname: 'user 3',
-  //       pictureURL: 'https://avatars.githubusercontent.com/u/105725219?v=4',
-  //     },
-  //   ],
-  // }
 
-  const questionsDetails = await Questions.getQuestionsDetails(questionId)
+  const data = await Questions.getQuestionsDetails(questionId)
 
-  res.json(questionsDetails)
+  res.json(data)
 }
 
-module.exports = { getQuestions, getQuestionsDetails }
+const createQuestion = async (req, res) => {
+  res.json(data)
+}
+
+// const createReply = async(req,res)=>{
+//   res.json(data)
+// }
+
+module.exports = { getQuestions, getQuestionsDetails,createQuestion }

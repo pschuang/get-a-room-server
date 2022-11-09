@@ -47,6 +47,36 @@ const getQuestionsDetails = async (questionId) => {
   return data
 }
 
+const getQuestions = async (questionsPerQuery, questionsPerPage) => {
+  const [data] = await db.query(
+    'SELECT questions.*, categories.category, user.id AS user_id, user.nickname, picture.picture_URL AS pictureURL FROM questions, user, categories, picture WHERE questions.user_id = user.id AND questions.category_id = categories.id AND user.picture_id = picture.id ORDER BY questions.id LIMIT ? OFFSET ?',
+    [questionsPerQuery, questionsPerPage]
+  )
+
+  return data
+}
+
+const GetReplyCounts = async (questionId) => {
+  const [data] = await db.query(
+    `SELECT count(*) AS reply_counts FROM replies WHERE question_id =?`,
+    [questionId]
+  )
+
+  return data
+}
+
+const createQuestion = async () => {
+  //
+}
+
+const createReply = async () => {
+  //
+}
+
 module.exports = {
   getQuestionsDetails,
+  getQuestions,
+  GetReplyCounts,
+  createQuestion,
+  createReply,
 }
