@@ -47,16 +47,23 @@ const getQuestionsDetails = async (questionId) => {
   return data
 }
 
-const getQuestions = async (questionsPerQuery, questionsPerPage) => {
+const getQuestions = async (paging, questionsPerPage) => {
   const [data] = await db.query(
-    'SELECT questions.*, categories.category, user.id AS user_id, user.nickname, picture.picture_URL AS pictureURL FROM questions, user, categories, picture WHERE questions.user_id = user.id AND questions.category_id = categories.id AND user.picture_id = picture.id ORDER BY questions.id LIMIT ? OFFSET ?',
-    [questionsPerQuery, questionsPerPage]
+    'SELECT questions.*, categories.category, user.id AS user_id, user.nickname, picture.picture_URL AS pictureURL FROM questions, user, categories, picture WHERE questions.user_id = user.id AND questions.category_id = categories.id AND user.picture_id = picture.id ORDER BY questions.id LIMIT ? ,?',
+    [questionsPerPage * paging, questionsPerPage]
   )
 
   return data
 }
 
-const GetReplyCounts = async (questionId) => {
+const getTotalQuestions = async () => {
+  const [totalQuestions] = await db.query(
+    'SELECT count(*) AS total FROM questions'
+  )
+  return totalQuestions[0].total
+}
+
+const getReplyCounts = async (questionId) => {
   const [data] = await db.query(
     `SELECT count(*) AS reply_counts FROM replies WHERE question_id =?`,
     [questionId]
@@ -74,14 +81,24 @@ const createQuestion = async (userId, categoryId, content) => {
   console.log(`created question successfully! question id: ${result.insertId}`)
 }
 
-const createReply = async () => {
-  //
+const createReply = async (userId, questionId, reply) => {
+  const datetime = Date.now()
+  const [result] = await db.query(
+    `INSERT INTO replies (user_id, question_id, reply, time) VALUES (?, ?, ?, ?)`,
+    [userId, questionId, reply, datetime]
+  )
+  console.log(
+    `Reply create at ${new Date().toLocaleString()} reply id: ${
+      result.insertId
+    }`
+  )
 }
 
 module.exports = {
   getQuestionsDetails,
   getQuestions,
-  GetReplyCounts,
+  getTotalQuestions,
+  getReplyCounts,
   createQuestion,
   createReply,
 }

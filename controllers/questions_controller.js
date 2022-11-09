@@ -8,26 +8,29 @@ const getQuestions = async (req, res) => {
   }
   console.log(paging)
 
-  // 定義每頁取的筆數 & 每次撈資料筆數
+  // 定義每頁取的筆數
   const questionsPerPage = 8
-  const questionsPerQuery = 9
 
-  const questions = await Questions.getQuestions(
-    questionsPerQuery,
-    questionsPerPage * paging
-  )
+  const totalQuestions = await Questions.getTotalQuestions()
+
+  const questions = await Questions.getQuestions(paging, questionsPerPage)
 
   // 每個問題加上 replies 個數
   for (const question of questions) {
-    const replyCounts = await Questions.GetReplyCounts(question.id)
+    const replyCounts = await Questions.getReplyCounts(question.id)
     question.reply_counts = replyCounts[0].reply_counts
     delete question.category_id
   }
 
   const data =
-    questions.length === questionsPerQuery
-      ? { questions, next_paging: paging + 1 }
-      : { questions }
+    totalQuestions > (paging + 1) * questionsPerPage
+      ? {
+          questions,
+          next_paging: paging + 1,
+        }
+      : {
+          questions,
+        }
   return res.json(data)
 }
 
@@ -49,8 +52,15 @@ const createQuestion = async (req, res) => {
   res.json({ message: 'created question successfully!' })
 }
 
-// const createReply = async(req,res)=>{
-//   res.json(data)
-// }
+const createReply = async (req, res) => {
+  const { user_id, question_id, reply } = req.body
+  await Questions.createReply(user_id, question_id, reply)
+  res.json({ message: 'created reply successfully!' })
+}
 
-module.exports = { getQuestions, getQuestionsDetails, createQuestion }
+module.exports = {
+  getQuestions,
+  getQuestionsDetails,
+  createQuestion,
+  createReply,
+}
