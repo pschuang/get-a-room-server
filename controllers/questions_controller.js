@@ -41,11 +41,16 @@ const getQuestionsDetails = async (req, res) => {
 }
 
 const createQuestion = async (req, res) => {
-  res.json(data)
+  const { user_id, category_id, content } = req.body
+  if (!user_id || !category_id || !content) {
+    return res.status(400).json({ message: 'question detail insufficient' })
+  }
+  await Questions.createQuestion(user_id, category_id, content)
+  res.json({ message: 'created question successfully!' })
 }
 
 // const createReply = async(req,res)=>{
 //   res.json(data)
 // }
 
-module.exports = { getQuestions, getQuestionsDetails,createQuestion }
+module.exports = { getQuestions, getQuestionsDetails, createQuestion }

@@ -65,8 +65,13 @@ const GetReplyCounts = async (questionId) => {
   return data
 }
 
-const createQuestion = async () => {
-  //
+const createQuestion = async (userId, categoryId, content) => {
+  const datetime = Date.now()
+  const [result] = await db.query(
+    `INSERT INTO questions (user_id, category_id, start_time, content, is_closed) VALUES (?, ?, ?, ?, ?)`,
+    [userId, categoryId, datetime, content, 0]
+  )
+  console.log(`created question successfully! question id: ${result.insertId}`)
 }
 
 const createReply = async () => {
