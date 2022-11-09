@@ -91,19 +91,29 @@ const getReplyCounts = async (questionId) => {
 
 const createQuestion = async (userId, categoryId, content) => {
   const datetime = Date.now()
-  const [result] = await db.query(
-    `INSERT INTO questions (user_id, category_id, start_time, content, is_closed) VALUES (?, ?, ?, ?, ?)`,
-    [userId, categoryId, datetime, content, 0]
-  )
+
+  const question = {
+    user_id: userId,
+    category_id: categoryId,
+    start_time: datetime,
+    content: content,
+    is_closed: 0,
+  }
+  const [result] = await db.query(`INSERT INTO questions SET?`, question)
   console.log(`created question successfully! question id: ${result.insertId}`)
 }
 
 const createReply = async (userId, questionId, reply) => {
   const datetime = Date.now()
-  const [result] = await db.query(
-    `INSERT INTO replies (user_id, question_id, reply, time) VALUES (?, ?, ?, ?)`,
-    [userId, questionId, reply, datetime]
-  )
+
+  const replyData = {
+    user_id: userId,
+    question_id: questionId,
+    reply: reply,
+    time: datetime,
+  }
+
+  const [result] = await db.query(`INSERT INTO replies SET ?`, replyData)
   console.log(
     `Reply create at ${new Date().toLocaleString()} reply id: ${
       result.insertId
