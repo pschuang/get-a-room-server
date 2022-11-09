@@ -11,9 +11,22 @@ const getQuestions = async (req, res) => {
   // 定義每頁取的筆數
   const questionsPerPage = 8
 
-  const totalQuestions = await Questions.getTotalQuestions()
+  // params
+  const { category } = req.params
 
-  const questions = await Questions.getQuestions(paging, questionsPerPage)
+  const totalQuestions =
+    category === 'all'
+      ? await Questions.getTotalQuestions()
+      : await Questions.getTotalQuestionsByCategory(category)
+
+  const questions =
+    category === 'all'
+      ? await Questions.getQuestions(paging, questionsPerPage)
+      : await Questions.getQuestionsByCategory(
+          category,
+          paging,
+          questionsPerPage
+        )
 
   // 每個問題加上 replies 個數
   for (const question of questions) {

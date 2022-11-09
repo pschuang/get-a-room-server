@@ -56,9 +56,26 @@ const getQuestions = async (paging, questionsPerPage) => {
   return data
 }
 
+const getQuestionsByCategory = async (category, paging, questionsPerPage) => {
+  const [data] = await db.query(
+    'SELECT questions.*, categories.category, user.id AS user_id, user.nickname, picture.picture_URL AS pictureURL FROM questions, user, categories, picture WHERE questions.user_id = user.id AND questions.category_id = categories.id AND user.picture_id = picture.id AND category = ? ORDER BY questions.id LIMIT ? ,?',
+    [category, questionsPerPage * paging, questionsPerPage]
+  )
+
+  return data
+}
+
 const getTotalQuestions = async () => {
   const [totalQuestions] = await db.query(
     'SELECT count(*) AS total FROM questions'
+  )
+  return totalQuestions[0].total
+}
+
+const getTotalQuestionsByCategory = async (category) => {
+  const [totalQuestions] = await db.query(
+    'SELECT count(*) AS total FROM questions, categories WHERE questions.category_id = categories.id AND categories.category = ?',
+    [category]
   )
   return totalQuestions[0].total
 }
@@ -97,7 +114,9 @@ const createReply = async (userId, questionId, reply) => {
 module.exports = {
   getQuestionsDetails,
   getQuestions,
+  getQuestionsByCategory,
   getTotalQuestions,
+  getTotalQuestionsByCategory,
   getReplyCounts,
   createQuestion,
   createReply,
