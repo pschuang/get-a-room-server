@@ -10,13 +10,16 @@
   "author": "Pin Shan Chuang",
   "license": "ISC",
   "dependencies": {
+    "bcrypt": "^5.1.0",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "ioredis": "^5.2.3",
+    "jsonwebtoken": "^8.5.1",
     "mysql2": "^2.3.3",
     "socket.io": "^4.5.3",
-    "uuid": "^9.0.0"
+    "uuid": "^9.0.0",
+    "validator": "^13.7.0"
   },
   "devDependencies": {
     "eslint": "^8.26.0",
