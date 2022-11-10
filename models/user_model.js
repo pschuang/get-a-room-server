@@ -52,6 +52,46 @@ const signUp = async (name, nickname, email, password, pictureId) => {
   }
 }
 
+const signIn = async (email, password) => {
+  const conn = await db.getConnection()
+  try {
+    const [users] = await conn.query('SELECT * FROM user WHERE email = ?', [
+      email,
+    ])
+    const user = users[0]
+    if (!bcrypt.compareSync(password, user.password)) {
+      return { error: 'Wrong password', status: 403 }
+    }
+
+    const accessToken = jwt.sign(
+      {
+        name: user.name,
+        nickname: user.nickname,
+        email: user.email,
+        picture_id: user.picture_id,
+      },
+      TOKEN_SECRET,
+      {
+        expiresIn: TOKEN_EXPIRE,
+      }
+    )
+
+    user.access_token = accessToken
+
+    return { user }
+  } catch (e) {
+    return { error: e.message }
+  } finally {
+    await conn.release()
+  }
+}
+
+const signOut = async () => {
+  //
+}
+
 module.exports = {
   signUp,
+  signIn,
+  signOut,
 }

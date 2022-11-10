@@ -43,7 +43,37 @@ const signUp = async (req, res) => {
 }
 
 const signIn = async (req, res) => {
-  //
+  const { email, password } = req.body
+  console.log(email, password)
+  if (!email || !password) {
+    res.status(400).json({ error: 'email and password are required.' })
+  }
+
+  const result = await User.signIn(email, password)
+
+  const { user, error, status } = result
+  if (error) {
+    const statuscode = status ? status : 500
+    res.status(statuscode).json({ error: error })
+    return
+  }
+
+  if (!user) {
+    res.status(500).json({ message: 'Database query error.' })
+    return
+  }
+
+  const data = {
+    access_token: user.access_token,
+    user: {
+      id: user.id,
+      name: user.name,
+      nickname: user.nickname,
+      email: user.email,
+      picture_id: user.picture_id,
+    },
+  }
+  res.json(data)
 }
 
 const signOut = async (req, res) => {
