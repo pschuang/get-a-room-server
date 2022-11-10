@@ -20,8 +20,10 @@ app.use('/api/' + API_VERSION, [
   require('./routes/chatroom_route'),
   require('./routes/friends_route'),
   require('./routes/questions_route'),
+  require('./routes/user_route'),
 ])
 
+// socket
 const io = new Server(server, {
   cors: {
     origin: 'http://localhost:3000',
