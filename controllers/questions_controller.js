@@ -1,4 +1,5 @@
 require('dotenv').config
+const e = require('express')
 const Questions = require('../models/questions_model')
 
 const getQuestions = async (req, res) => {
@@ -13,20 +14,29 @@ const getQuestions = async (req, res) => {
 
   // params
   const { category } = req.params
+  // query strings
+  const { keyword } = req.query
 
-  const totalQuestions =
-    category === 'all'
-      ? await Questions.getTotalQuestions()
-      : await Questions.getTotalQuestionsByCategory(category)
-
-  const questions =
-    category === 'all'
-      ? await Questions.getQuestions(paging, questionsPerPage)
-      : await Questions.getQuestionsByCategory(
+  const findQuestion = async (category) => {
+    switch (category) {
+      case 'all':
+        console.log('case all is called')
+        return await Questions.getQuestions(paging, questionsPerPage, {
+          keyword,
+        })
+      default:
+        console.log('case default is called')
+        return await Questions.getQuestions(paging, questionsPerPage, {
           category,
-          paging,
-          questionsPerPage
-        )
+          keyword,
+        })
+    }
+  }
+
+  const { questions, questionsCount } = await findQuestion(category)
+
+  console.log('questions: ', questions)
+  console.log('questionsCount: ', questionsCount)
 
   // 每個問題加上 replies 個數
   for (const question of questions) {
@@ -36,7 +46,7 @@ const getQuestions = async (req, res) => {
   }
 
   const data =
-    totalQuestions > (paging + 1) * questionsPerPage
+    questionsCount[0].total > (paging + 1) * questionsPerPage
       ? {
           questions,
           next_paging: paging + 1,
@@ -44,6 +54,7 @@ const getQuestions = async (req, res) => {
       : {
           questions,
         }
+
   return res.json(data)
 }
 

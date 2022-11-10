@@ -47,22 +47,58 @@ const getQuestionsDetails = async (questionId) => {
   return data
 }
 
-const getQuestions = async (paging, questionsPerPage) => {
-  const [data] = await db.query(
-    'SELECT questions.*, categories.category, user.id AS user_id, user.nickname, picture.picture_URL AS pictureURL FROM questions, user, categories, picture WHERE questions.user_id = user.id AND questions.category_id = categories.id AND user.picture_id = picture.id ORDER BY questions.id LIMIT ? ,?',
-    [questionsPerPage * paging, questionsPerPage]
+const getQuestions = async (paging, questionsPerPage, requirements = {}) => {
+  console.log('requirements', requirements)
+
+  const condition = {
+    sql: '',
+    binding: [],
+  }
+
+  if (!requirements.category && !requirements.keyword) {
+    console.log('all without keyword')
+  } else if (!requirements.category && requirements.keyword) {
+    console.log('all with keyword')
+    condition.sql += 'AND questions.content LIKE ?'
+    condition.binding = [`%${requirements.keyword}%`]
+  } else if (requirements.category && !requirements.keyword) {
+    console.log('category without keyword')
+    condition.sql += 'AND categories.category = ?'
+    condition.binding = [requirements.category]
+  } else if (requirements.category && requirements.keyword) {
+    console.log('category with keyword')
+    condition.sql += 'AND categories.category = ? AND questions.content LIKE ?'
+    condition.binding = [requirements.category, `%${requirements.keyword}%`]
+  }
+
+  const order = {
+    sql: 'ORDER BY questions.id ',
+  }
+
+  const limit = {
+    sql: 'LIMIT ?, ? ',
+    binding: [paging * questionsPerPage, questionsPerPage],
+  }
+
+  const questionQuery =
+    'SELECT questions.*, categories.category, user.id AS user_id, user.nickname, picture.picture_URL AS pictureURL FROM questions, user, categories, picture WHERE questions.user_id = user.id AND questions.category_id = categories.id AND user.picture_id = picture.id ' +
+    condition.sql +
+    order.sql +
+    limit.sql
+  const questionBindings = condition.binding.concat(limit.binding)
+
+  const questionCountQuery =
+    'SELECT count(*) AS total FROM questions, categories WHERE questions.category_id = categories.id ' +
+    condition.sql
+
+  const questionCountBindings = condition.binding
+
+  const [questions] = await db.query(questionQuery, questionBindings)
+  const [questionsCount] = await db.query(
+    questionCountQuery,
+    questionCountBindings
   )
-
-  return data
-}
-
-const getQuestionsByCategory = async (category, paging, questionsPerPage) => {
-  const [data] = await db.query(
-    'SELECT questions.*, categories.category, user.id AS user_id, user.nickname, picture.picture_URL AS pictureURL FROM questions, user, categories, picture WHERE questions.user_id = user.id AND questions.category_id = categories.id AND user.picture_id = picture.id AND category = ? ORDER BY questions.id LIMIT ? ,?',
-    [category, questionsPerPage * paging, questionsPerPage]
-  )
-
-  return data
+  return { questions, questionsCount }
 }
 
 const getTotalQuestions = async () => {
@@ -124,9 +160,6 @@ const createReply = async (userId, questionId, reply) => {
 module.exports = {
   getQuestionsDetails,
   getQuestions,
-  getQuestionsByCategory,
-  getTotalQuestions,
-  getTotalQuestionsByCategory,
   getReplyCounts,
   createQuestion,
   createReply,
