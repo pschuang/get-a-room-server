@@ -2,7 +2,15 @@ const db = require('./mysqlconf')
 
 const getQuestionsDetails = async (questionId) => {
   const [details] = await db.query(
-    'SELECT questions.user_id, questions.content, replies.user_id AS userId, replies.reply AS answer, user.nickname, picture.picture_URL AS pictureURL FROM questions, replies, user, picture WHERE questions.id = replies.question_id AND user.id = replies.user_id AND user.picture_id = picture.id AND questions.id = ?',
+    `SELECT questions.user_id, questions.content, replies.user_id AS userId, replies.reply AS answer, user.nickname, picture.picture_URL AS pictureURL
+    FROM questions
+    LEFT JOIN replies 
+    ON questions.id = replies.question_id
+    LEFT JOIN user
+    ON user.id = replies.user_id
+    LEFT JOIN picture
+    ON user.picture_id = picture.id
+    WHERE questions.id = ?`,
     [questionId]
   )
   console.log(details)
@@ -101,19 +109,15 @@ const getQuestions = async (paging, questionsPerPage, requirements = {}) => {
   return { questions, questionsCount }
 }
 
-const getTotalQuestions = async () => {
-  const [totalQuestions] = await db.query(
-    'SELECT count(*) AS total FROM questions'
+const checkStatus = async (userId) => {
+  //TODO: 之後還須加上時間判斷
+  const [question] = await db.query(
+    'SELECT questions.*, categories.category, user.id AS user_id, user.nickname, picture.picture_URL AS pictureURL FROM questions, user, categories, picture WHERE questions.user_id = user.id AND questions.category_id = categories.id AND user.picture_id = picture.id AND user_id = ?',
+    [userId]
   )
-  return totalQuestions[0].total
-}
+  const alreadyCreatedQuestion = question.length !== 0
 
-const getTotalQuestionsByCategory = async (category) => {
-  const [totalQuestions] = await db.query(
-    'SELECT count(*) AS total FROM questions, categories WHERE questions.category_id = categories.id AND categories.category = ?',
-    [category]
-  )
-  return totalQuestions[0].total
+  return { alreadyCreatedQuestion, question: question[0] || null }
 }
 
 const getReplyCounts = async (questionId) => {
@@ -160,6 +164,7 @@ const createReply = async (userId, questionId, reply) => {
 module.exports = {
   getQuestionsDetails,
   getQuestions,
+  checkStatus,
   getReplyCounts,
   createQuestion,
   createReply,
