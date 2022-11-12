@@ -24,7 +24,7 @@ const authentication = async (req, res, next) => {
     console.log('access token after:', accessToken)
     const user = jwt.verify(accessToken, TOKEN_SECRET)
     console.log('user: ', user)
-
+    req.user = user
     next()
   } catch (error) {
     res.status(403).json({ message: error.message })

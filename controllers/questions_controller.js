@@ -67,11 +67,28 @@ const getQuestionsDetails = async (req, res) => {
   res.json(data)
 }
 
+const checkStatus = async (req, res) => {
+  const user = req.user
+  const { alreadyCreatedQuestion, question } = await Questions.checkStatus(
+    user.id
+  )
+  if (question) {
+    const reply_counts = await Questions.getReplyCounts(question.id)
+    question.reply_counts = reply_counts[0].reply_counts
+  }
+  const data = { alreadyCreatedQuestion, question }
+  res.json(data)
+}
+
 const createQuestion = async (req, res) => {
-  const { user_id, category_id, content } = req.body
+  const user_id = req.user.id
+  const { category_id, content } = req.body
   if (!user_id || !category_id || !content) {
     return res.status(400).json({ message: 'question detail insufficient' })
   }
+
+  //TODO: 要確認這個 user 該時段是否已經發布過問題
+
   await Questions.createQuestion(user_id, category_id, content)
   res.json({ message: 'created question successfully!' })
 }
@@ -85,6 +102,7 @@ const createReply = async (req, res) => {
 module.exports = {
   getQuestions,
   getQuestionsDetails,
+  checkStatus,
   createQuestion,
   createReply,
 }

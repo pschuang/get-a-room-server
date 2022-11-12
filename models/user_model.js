@@ -58,6 +58,7 @@ const signIn = async (email, password) => {
     const [users] = await conn.query('SELECT * FROM user WHERE email = ?', [
       email,
     ])
+    // TODO: 找不到 email 的情況
     const user = users[0]
     if (!bcrypt.compareSync(password, user.password)) {
       return { error: 'Wrong password', status: 403 }
@@ -65,6 +66,7 @@ const signIn = async (email, password) => {
 
     const accessToken = jwt.sign(
       {
+        id: user.id,
         name: user.name,
         nickname: user.nickname,
         email: user.email,
