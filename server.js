@@ -41,18 +41,24 @@ io.on('connection', (socket) => {
   console.log(`socket ${socket.id} is connected`)
 
   console.log('UUUSER: ', socket.user)
-  // disconnect
-  socket.on('disconnect', () => {
-    console.log('Got disconnected')
-    delete users[socket.user_id]
-    console.log(users)
-    // TODO: handle rooms 要把已經不在的 room 刪掉
-    console.log(rooms)
-  })
+
+  // 紀錄 user 的 socket
+  users[socket.user.id] = socket
 
   // count the current connections
   const count = io.engine.clientsCount
   console.log(`${count}th user is connected`)
+
+  // ======== EVENTS ========= //
+
+  // disconnect
+  socket.on('disconnect', () => {
+    console.log('Got disconnected')
+    delete users[socket.user.id]
+    console.log('users:', users)
+    // TODO: handle rooms 要把已經不在的 room 刪掉
+    console.log('rooms: ', rooms)
+  })
 
   // 收到訊息後轉發同個聊天室
   socket.on('send-message', (msg) => {
@@ -67,12 +73,12 @@ io.on('connection', (socket) => {
     // 1. 自己管 room
     let members = rooms[msg.roomId].members
     console.log('members: ', members)
-    if (members[0] == socket.user_id) {
+    if (members[0] == socket.user.id) {
       users[members[1]].emit('receive-message', {
         userId: msg.userId,
         message: msg.message,
       })
-    } else if (members[1] == socket.user_id) {
+    } else if (members[1] == socket.user.id) {
       users[members[0]].emit('receive-message', {
         userId: msg.userId,
         message: msg.message,
@@ -85,20 +91,15 @@ io.on('connection', (socket) => {
   // 收到 send-message-to-friend 後轉發
   socket.on('send-message-to-friend', (data) => {
     console.log('send-message-to-friend: ', data)
-    const { roomId, message, userId } = data
+    const { roomId, message } = data
 
     // 寫進資料庫
-    Chatroom.createMessage(userId, message, roomId)
+    Chatroom.createMessage(socket.user.id, message, roomId)
 
     // 轉發
-    socket.to(roomId).emit('receive-message-from-friend', { userId, message })
-  })
-
-  // 告訴 server 自己是哪個 user
-  socket.on('user-id', (user_id) => {
-    console.log('user id:', user_id)
-    socket.user_id = user_id
-    users[socket.user_id] = socket
+    socket
+      .to(roomId)
+      .emit('receive-message-from-friend', { userId: socket.user.id, message })
   })
 
   // client 端點擊 repliers 發送 create room 事件後
@@ -121,7 +122,7 @@ io.on('connection', (socket) => {
     // }
 
     rooms[roomId] = {
-      members: [parseInt(socket.user_id), data.counterpart],
+      members: [parseInt(socket.user.id), data.counterpart],
       created_dt: Date.now(),
     }
 
@@ -136,7 +137,7 @@ io.on('connection', (socket) => {
     users[data.counterpart].emit('create-room-ok', {
       // 回傳給聊天對象 roomId 以及 自己的 id
       roomId,
-      counterpart: parseInt(socket.user_id),
+      counterpart: parseInt(socket.user.id),
       isPassive: true, // 被選中的人是多回傳 isPassive: true
     })
   })
@@ -149,7 +150,13 @@ io.on('connection', (socket) => {
     // 從 jwt 拿到 userid & 從前端拿到 roomid之後，確認此 user 有沒有權限加入 room
     const canJoinRoom = await Chatroom.checkUserAuth(socket.user.id, roomId)
 
-    if (!canJoinRoom) next(new Error('cannot join this room!'))
+    if (!canJoinRoom) {
+      socket.emit('join-room-fail', {
+        message: `not authorized to join room ${roomId}`,
+      })
+      console.log(`cannot join`)
+      return
+    }
     // TODO: 在 chatroom 點選另外一個朋友之後要leave 前一個 room 再 join 後一個 room
     // socket.leaveAll()
     socket.join(roomId)
