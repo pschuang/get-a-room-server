@@ -7,7 +7,6 @@ const getQuestions = async (req, res) => {
   if (paging < 0 || isNaN(paging)) {
     return res.status(400).json({ error: 'wrong parameter' })
   }
-  console.log(paging)
 
   // 定義每頁取的筆數
   const questionsPerPage = 8
@@ -20,7 +19,6 @@ const getQuestions = async (req, res) => {
   const findQuestion = async (category) => {
     switch (category) {
       case 'all':
-        console.log('case all is called')
         return await Questions.getQuestions(paging, questionsPerPage, {
           keyword,
         })
@@ -34,9 +32,6 @@ const getQuestions = async (req, res) => {
   }
 
   const { questions, questionsCount } = await findQuestion(category)
-
-  console.log('questions: ', questions)
-  console.log('questionsCount: ', questionsCount)
 
   // 每個問題加上 replies 個數
   for (const question of questions) {

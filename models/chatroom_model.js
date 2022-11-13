@@ -24,7 +24,17 @@ const createMessage = async (userId, message, roomId) => {
   console.log(`insert message successfully! insertId: ${result.insertId}`)
 }
 
+const checkUserAuth = async (userId, roomId) => {
+  const [result] = await db.query(
+    'SELECT * FROM friends WHERE user_id = ? AND room_id = ?',
+    [userId, roomId]
+  )
+  const canJoinRoom = result.length === 0 ? false : true
+  return canJoinRoom
+}
+
 module.exports = {
   getMessages,
   createMessage,
+  checkUserAuth,
 }

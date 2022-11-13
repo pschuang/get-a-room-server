@@ -13,7 +13,6 @@ const getQuestionsDetails = async (questionId) => {
     WHERE questions.id = ?`,
     [questionId]
   )
-  console.log(details)
 
   // 問問題的人的 userId
   const questionUserId = details[0].user_id
@@ -56,25 +55,23 @@ const getQuestionsDetails = async (questionId) => {
 }
 
 const getQuestions = async (paging, questionsPerPage, requirements = {}) => {
-  console.log('requirements', requirements)
-
   const condition = {
     sql: '',
     binding: [],
   }
 
   if (!requirements.category && !requirements.keyword) {
-    console.log('all without keyword')
+    // console.log('all without keyword')
   } else if (!requirements.category && requirements.keyword) {
-    console.log('all with keyword')
+    // console.log('all with keyword')
     condition.sql += 'AND questions.content LIKE ?'
     condition.binding = [`%${requirements.keyword}%`]
   } else if (requirements.category && !requirements.keyword) {
-    console.log('category without keyword')
+    // console.log('category without keyword')
     condition.sql += 'AND categories.category = ?'
     condition.binding = [requirements.category]
   } else if (requirements.category && requirements.keyword) {
-    console.log('category with keyword')
+    // console.log('category with keyword')
     condition.sql += 'AND categories.category = ? AND questions.content LIKE ?'
     condition.binding = [requirements.category, `%${requirements.keyword}%`]
   }

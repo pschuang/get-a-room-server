@@ -4,8 +4,9 @@ const { Server } = require('socket.io')
 const app = require('./app')
 const server = http.createServer(app)
 
-const { PORT } = process.env
+const { PORT, TOKEN_SECRET } = process.env
 const { v4: uuidv4 } = require('uuid')
+const jwt = require('jsonwebtoken')
 const Chatroom = require('./models/chatroom_model')
 
 const io = new Server(server, {
@@ -18,9 +19,28 @@ const io = new Server(server, {
 // rooms
 let rooms = {}
 let users = {}
+// io.use((socket, next) => {
+//   console.log('the error middleware')
+//   next(new Error('thou shall not pass'))
+// })
+io.use((socket, next) => {
+  console.log('the socket auth middleware')
+  console.log('TOKEN:', socket.handshake.auth.token)
+  // console.log('TOKEN:', socket.handshake.headers['Authorization'])
+  try {
+    const user = jwt.verify(socket.handshake.auth.token, TOKEN_SECRET)
+    socket.user = user
+    next()
+  } catch (err) {
+    console.log(err)
+    const authError = new Error('not authorized')
+    next(authError)
+  }
+})
 io.on('connection', (socket) => {
   console.log(`socket ${socket.id} is connected`)
 
+  console.log('UUUSER: ', socket.user)
   // disconnect
   socket.on('disconnect', () => {
     console.log('Got disconnected')
@@ -122,9 +142,14 @@ io.on('connection', (socket) => {
   })
 
   // client 端點擊好友發送 join-room 事件
-  socket.on('join-room', (data) => {
+  socket.on('join-room', async (data) => {
     console.log('data: ', data)
+    console.log('socket.user: ', socket.user)
     const { roomId } = data
+    // 從 jwt 拿到 userid & 從前端拿到 roomid之後，確認此 user 有沒有權限加入 room
+    const canJoinRoom = await Chatroom.checkUserAuth(socket.user.id, roomId)
+
+    if (!canJoinRoom) next(new Error('cannot join this room!'))
     // TODO: 在 chatroom 點選另外一個朋友之後要leave 前一個 room 再 join 後一個 room
     // socket.leaveAll()
     socket.join(roomId)

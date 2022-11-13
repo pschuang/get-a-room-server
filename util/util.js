@@ -11,9 +11,7 @@ const wrapAsync = (fn) => {
 }
 
 const authentication = async (req, res, next) => {
-  console.log('Now in authentication')
   let accessToken = req.get('Authorization')
-  console.log('access token before:', accessToken)
   if (!accessToken) {
     res.status(401).json({ message: 'token is required' })
     return
@@ -21,7 +19,6 @@ const authentication = async (req, res, next) => {
 
   try {
     accessToken = accessToken.split(' ')[1]
-    console.log('access token after:', accessToken)
     const user = jwt.verify(accessToken, TOKEN_SECRET)
     console.log('user: ', user)
     req.user = user
