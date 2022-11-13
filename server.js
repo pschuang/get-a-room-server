@@ -44,6 +44,7 @@ io.on('connection', (socket) => {
 
   // 紀錄 user 的 socket
   users[socket.user.id] = socket
+  console.log('users on connection:', users)
 
   // count the current connections
   const count = io.engine.clientsCount
