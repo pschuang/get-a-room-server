@@ -146,6 +146,7 @@ io.on('connection', (socket) => {
   socket.on('join-room', async (data) => {
     console.log('data: ', data)
     console.log('socket.user: ', socket.user)
+    console.log('socket rooms before: ', socket.rooms)
     const { roomId } = data
     // 從 jwt 拿到 userid & 從前端拿到 roomid之後，確認此 user 有沒有權限加入 room
     const canJoinRoom = await Chatroom.checkUserAuth(socket.user.id, roomId)
@@ -157,9 +158,19 @@ io.on('connection', (socket) => {
       console.log(`cannot join`)
       return
     }
-    // TODO: 在 chatroom 點選另外一個朋友之後要leave 前一個 room 再 join 後一個 room
-    // socket.leaveAll()
+    // JOIN 另外一個 room 之前要先離開其他 rooms (但要保留自己的 socket.id 的那個 room)
+
+    const currentRooms = Array.from(socket.rooms)
+    console.log(currentRooms)
+
+    const filteredRooms = currentRooms.filter((room) => room !== socket.id)
+    filteredRooms.forEach((room) => {
+      socket.leave(room)
+    })
+
     socket.join(roomId)
+    console.log('socket rooms after: ', socket.rooms)
+
     // socket.emit('join-room-ok')
   })
 })
