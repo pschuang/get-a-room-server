@@ -51,7 +51,7 @@ const getQuestionsDetails = async (questionId) => {
   }
   console.log('repliers: ', repliers)
 
-  const data = { content: details[0].content, repliers }
+  const data = { content: details[0].content, repliers, questionUserId }
   return data
 }
 

@@ -59,12 +59,19 @@ const getQuestions = async (req, res) => {
 }
 
 const getQuestionsDetails = async (req, res) => {
+  const userId = req.user.id
+  // 接 question_id
   const { questionId } = req.params
   console.log(questionId)
 
-  const data = await Questions.getQuestionsDetails(questionId)
+  const { content, repliers, questionUserId } =
+    await Questions.getQuestionsDetails(questionId)
 
-  res.json(data)
+  if (questionUserId !== userId) {
+    res.status(403).json({ message: 'not authorized to view this question' })
+    return
+  }
+  res.json({ content, repliers })
 }
 
 const checkStatus = async (req, res) => {
@@ -94,7 +101,11 @@ const createQuestion = async (req, res) => {
 }
 
 const createReply = async (req, res) => {
-  const { user_id, question_id, reply } = req.body
+  const user_id = req.user.id
+  const { question_id, reply } = req.body
+  if (!user_id || !question_id || !reply) {
+    return res.status(400).json({ message: 'reply detail insufficient' })
+  }
   await Questions.createReply(user_id, question_id, reply)
   res.json({ message: 'created reply successfully!' })
 }
