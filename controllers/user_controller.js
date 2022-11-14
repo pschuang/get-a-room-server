@@ -80,8 +80,15 @@ const signOut = async (req, res) => {
   //
 }
 
+const getUserInfo = async (req, res) => {
+  const userId = req.user.id
+  const user = await User.getUserInfo(userId)
+  res.json(user)
+}
+
 module.exports = {
   signUp,
   signIn,
   signOut,
+  getUserInfo,
 }

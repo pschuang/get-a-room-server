@@ -63,7 +63,7 @@ io.on('connection', (socket) => {
 
   // 收到訊息後轉發同個聊天室
   socket.on('send-message', (msg) => {
-    // msg: {roomId: xxx, message: 'hello'}
+    // msg: {roomId: xxx, message: 'hello', userId: 13}
     console.log('msg:', msg)
 
     if (!msg.roomId) {
