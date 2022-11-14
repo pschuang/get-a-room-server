@@ -25,7 +25,7 @@ let users = {}
 // })
 io.use((socket, next) => {
   console.log('the socket auth middleware')
-  console.log('TOKEN:', socket.handshake.auth.token)
+  // console.log('TOKEN:', socket.handshake.auth.token)
   // console.log('TOKEN:', socket.handshake.headers['Authorization'])
   try {
     const user = jwt.verify(socket.handshake.auth.token, TOKEN_SECRET)
@@ -37,14 +37,13 @@ io.use((socket, next) => {
     next(authError)
   }
 })
+
 io.on('connection', (socket) => {
   console.log(`socket ${socket.id} is connected`)
 
-  console.log('UUUSER: ', socket.user)
-
   // 紀錄 user 的 socket
   users[socket.user.id] = socket
-  console.log('users on connection:', users)
+  console.log('users on connection:', Object.keys(users))
 
   // count the current connections
   const count = io.engine.clientsCount
@@ -145,6 +144,7 @@ io.on('connection', (socket) => {
 
   // client 端點擊好友發送 join-room 事件
   socket.on('join-room', async (data) => {
+    console.log('receive join-room event...')
     console.log('data: ', data)
     console.log('socket.user: ', socket.user)
     console.log('socket rooms before: ', socket.rooms)
@@ -152,6 +152,8 @@ io.on('connection', (socket) => {
     // 從 jwt 拿到 userid & 從前端拿到 roomid之後，確認此 user 有沒有權限加入 room
     const canJoinRoom = await Chatroom.checkUserAuth(socket.user.id, roomId)
 
+    console.log(`user: ${socket.user.id} wants to join room ${roomId}`)
+    console.log('can join room: ', canJoinRoom)
     if (!canJoinRoom) {
       socket.emit('join-room-fail', {
         message: `not authorized to join room ${roomId}`,
@@ -173,6 +175,11 @@ io.on('connection', (socket) => {
     console.log('socket rooms after: ', socket.rooms)
 
     // socket.emit('join-room-ok')
+  })
+
+  socket.on('logout', () => {
+    console.log('receive logout event...')
+    socket.disconnect()
   })
 })
 
