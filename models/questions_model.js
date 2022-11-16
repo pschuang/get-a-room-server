@@ -115,10 +115,16 @@ const getQuestions = async (paging, questionsPerPage, requirements = {}) => {
 }
 
 const checkStatus = async (userId) => {
-  //TODO: 之後還須加上時間判斷
+  // 加上時間判斷
+  const bulletinOpenUTC = BULLETIN_OPEN_TIME_UTC
+  const openTimeTodayUTC = dayjs().format('YYYY-MM-DD ') + bulletinOpenUTC
+  const closeTimeTodayUTC = dayjs(openTimeTodayUTC)
+    .add(60, 'minute')
+    .format('YYYY-MM-DD HH:mm:ss')
+
   const [question] = await db.query(
-    'SELECT questions.*, categories.category, user.id AS user_id, user.nickname, picture.picture_URL AS pictureURL FROM questions, user, categories, picture WHERE questions.user_id = user.id AND questions.category_id = categories.id AND user.picture_id = picture.id AND user_id = ?',
-    [userId]
+    'SELECT questions.*, categories.category, user.id AS user_id, user.nickname, picture.picture_URL AS pictureURL FROM questions, user, categories, picture WHERE questions.user_id = user.id AND questions.category_id = categories.id AND user.picture_id = picture.id AND user_id = ? AND start_time > ? AND start_time < ?',
+    [userId, openTimeTodayUTC, closeTimeTodayUTC]
   )
   const alreadyCreatedQuestion = question.length !== 0
 
