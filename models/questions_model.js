@@ -155,13 +155,13 @@ const createQuestion = async (userId, categoryId, content) => {
 }
 
 const createReply = async (userId, questionId, reply) => {
-  const datetime = Date.now()
+  const currentDateTime = dayjs().utc().format('YYYY-MM-DD HH:mm:ss')
 
   const replyData = {
     user_id: userId,
     question_id: questionId,
     reply: reply,
-    time: datetime,
+    time: currentDateTime,
   }
 
   const [result] = await db.query(`INSERT INTO replies SET ?`, replyData)

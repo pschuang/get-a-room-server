@@ -1,4 +1,5 @@
 const db = require('./mysqlconf')
+const dayjs = require('dayjs')
 
 const getMessages = async (roomId) => {
   const [messages] = await db.query(
@@ -17,9 +18,10 @@ const getMessages = async (roomId) => {
 }
 
 const createMessage = async (userId, message, roomId) => {
+  const currentDateTime = dayjs().utc().format('YYYY-MM-DD HH:mm:ss')
   const [result] = await db.query(
-    `INSERT INTO messages (send_user_id, content, created_at, room_id) VALUES (?, ?, convert_tz(UTC_TIMESTAMP(),'+00:00','+08:00'), ?)`,
-    [userId, message, roomId]
+    `INSERT INTO messages (send_user_id, content, created_at, room_id) VALUES (?, ?, ?, ?)`,
+    [userId, message, currentDateTime, roomId]
   )
   console.log(`insert message successfully! insertId: ${result.insertId}`)
 }
