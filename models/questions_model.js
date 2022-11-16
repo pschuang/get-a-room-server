@@ -1,4 +1,6 @@
 const db = require('./mysqlconf')
+const { BULLETIN_OPEN_TIME_UTC } = process.env
+const dayjs = require('dayjs')
 
 const getQuestionsDetails = async (questionId) => {
   const [details] = await db.query(
@@ -55,9 +57,15 @@ const getQuestionsDetails = async (questionId) => {
 }
 
 const getQuestions = async (paging, questionsPerPage, requirements = {}) => {
+  // 只撈布告欄開放時間內建立的問題
+  const bulletinOpenUTC = BULLETIN_OPEN_TIME_UTC
+  const openTimeTodayUTC = dayjs().format('YYYY-MM-DD ') + bulletinOpenUTC
+  const closeTimeTodayUTC = dayjs(openTimeTodayUTC)
+    .add(60, 'minute')
+    .format('YYYY-MM-DD HH:mm:ss')
   const condition = {
     sql: '',
-    binding: [],
+    binding: [openTimeTodayUTC, closeTimeTodayUTC],
   }
 
   if (!requirements.category && !requirements.keyword) {
@@ -77,7 +85,7 @@ const getQuestions = async (paging, questionsPerPage, requirements = {}) => {
   }
 
   const order = {
-    sql: 'ORDER BY questions.id ',
+    sql: 'ORDER BY questions.id DESC ',
   }
 
   const limit = {
@@ -86,14 +94,14 @@ const getQuestions = async (paging, questionsPerPage, requirements = {}) => {
   }
 
   const questionQuery =
-    'SELECT questions.*, categories.category, user.id AS user_id, user.nickname, picture.picture_URL AS pictureURL FROM questions, user, categories, picture WHERE questions.user_id = user.id AND questions.category_id = categories.id AND user.picture_id = picture.id ' +
+    'SELECT questions.*, categories.category, user.id AS user_id, user.nickname, picture.picture_URL AS pictureURL FROM questions, user, categories, picture WHERE questions.user_id = user.id AND questions.category_id = categories.id AND user.picture_id = picture.id AND start_time > ? AND start_time < ?' +
     condition.sql +
     order.sql +
     limit.sql
   const questionBindings = condition.binding.concat(limit.binding)
 
   const questionCountQuery =
-    'SELECT count(*) AS total FROM questions, categories WHERE questions.category_id = categories.id ' +
+    'SELECT count(*) AS total FROM questions, categories WHERE questions.category_id = categories.id AND start_time > ? AND start_time < ?' +
     condition.sql
 
   const questionCountBindings = condition.binding
@@ -127,12 +135,12 @@ const getReplyCounts = async (questionId) => {
 }
 
 const createQuestion = async (userId, categoryId, content) => {
-  const datetime = Date.now()
+  const currentDateTime = dayjs().utc().format('YYYY-MM-DD HH:mm:ss')
 
   const question = {
     user_id: userId,
     category_id: categoryId,
-    start_time: datetime,
+    start_time: currentDateTime,
     content: content,
     is_closed: 0,
   }
