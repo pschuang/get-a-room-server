@@ -1,6 +1,6 @@
 const router = require('express').Router()
 
-const { wrapAsync, authentication } = require('../util/util')
+const { wrapAsync, authentication, isBulletinOpen } = require('../util/util')
 
 const {
   getQuestions,
@@ -11,7 +11,7 @@ const {
 } = require('../controllers/questions_controller')
 
 router.route('/questions/status').get(authentication, checkStatus)
-router.route('/questions/:category').get(getQuestions)
+router.route('/questions/:category').get(isBulletinOpen, getQuestions)
 router
   .route('/questions/details/:questionId')
   .get(authentication, getQuestionsDetails)

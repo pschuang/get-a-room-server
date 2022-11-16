@@ -50,7 +50,6 @@ io.on('connection', (socket) => {
   console.log(`${count}th user is connected`)
 
   // ======== EVENTS ========= //
-
   // disconnect
   socket.on('disconnect', () => {
     console.log('Got disconnected')
@@ -175,11 +174,6 @@ io.on('connection', (socket) => {
     console.log('socket rooms after: ', socket.rooms)
 
     // socket.emit('join-room-ok')
-  })
-
-  socket.on('logout', () => {
-    console.log('receive logout event...')
-    socket.disconnect()
   })
 })
 
