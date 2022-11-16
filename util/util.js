@@ -1,5 +1,5 @@
 require('dotenv').config()
-const { TOKEN_SECRET } = process.env
+const { TOKEN_SECRET, BULLETIN_OPEN_TIME_UTC } = process.env
 const jwt = require('jsonwebtoken')
 const dayjs = require('dayjs')
 var utc = require('dayjs/plugin/utc')
@@ -38,32 +38,25 @@ const authentication = async (req, res, next) => {
 
 const isBulletinOpen = (req, res, next) => {
   // 布告欄開放時間 Asia/Taipei 16:00:00   UTC 08:00:00
-  const bulletinOpenUTC = '07:55:00'
-  const openTimeTodayUTC = dayjs().format('YYYY-MM-DD ') + bulletinOpenUTC
-  const closeTimeTodayUTC = dayjs(openTimeTodayUTC)
-    .add(60, 'minute')
-    .format('YYYY-MM-DD HH:mm:ss')
+  const openTimeTodayUTC =
+    dayjs().format('YYYY-MM-DD ') + BULLETIN_OPEN_TIME_UTC
+  const closeTimeTodayUTC = dayjs(openTimeTodayUTC).add(120, 'minute')
 
-  const openTimeTodayLocal = dayjs(openTimeTodayUTC)
-    .utc(true)
-    .tz(dayjs.tz.guess())
+  const nowUTC = dayjs().utc() // 這邊 .utc() 會把轉換時區到 utc
 
-  const closeTimeTodayLocal = dayjs(closeTimeTodayUTC)
-    .utc(true)
-    .tz(dayjs.tz.guess())
-
-  const now = dayjs()
-
-  console.log(
-    'Today bulletin is open at: ',
-    openTimeTodayLocal.format('YYYY-MM-DD HH:mm:ss')
-  )
+  console.log('Today bulletin is open at: ', openTimeTodayUTC)
   console.log(
     'Today bulletin is close at: ',
-    closeTimeTodayLocal.format('YYYY-MM-DD HH:mm:ss')
+    closeTimeTodayUTC.format('YYYY-MM-DD HH:mm:ss')
   )
-  console.log('datetime now is: ', now.format('YYYY-MM-DD HH:mm:ss'))
-  const canGetIn = now.isBetween(openTimeTodayLocal, closeTimeTodayLocal)
+  console.log('datetime now is: ', nowUTC.format('YYYY-MM-DD HH:mm:ss'))
+
+  // 判斷是否在區間
+  const canGetIn = nowUTC.isBetween(
+    dayjs(openTimeTodayUTC).utc(true), // 要把時區轉換到 utc 才可比較
+    closeTimeTodayUTC.utc(true)
+  )
+
   if (canGetIn) {
     // 在時間內的話放行
     console.log('bulletin is open')
