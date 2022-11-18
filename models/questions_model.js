@@ -72,16 +72,19 @@ const getQuestions = async (paging, questionsPerPage, requirements = {}) => {
     // console.log('all without keyword')
   } else if (!requirements.category && requirements.keyword) {
     // console.log('all with keyword')
-    condition.sql += 'AND questions.content LIKE ?'
-    condition.binding = [`%${requirements.keyword}%`]
+    condition.sql += 'AND questions.content LIKE ? '
+    condition.binding.push(`%${requirements.keyword}%`)
   } else if (requirements.category && !requirements.keyword) {
     // console.log('category without keyword')
-    condition.sql += 'AND categories.category = ?'
-    condition.binding = [requirements.category]
+    condition.sql += 'AND categories.category = ? '
+    condition.binding.push(requirements.category)
   } else if (requirements.category && requirements.keyword) {
     // console.log('category with keyword')
-    condition.sql += 'AND categories.category = ? AND questions.content LIKE ?'
-    condition.binding = [requirements.category, `%${requirements.keyword}%`]
+    condition.sql += 'AND categories.category = ? AND questions.content LIKE ? '
+    condition.binding.push(
+      requirements.category,
+      `%${requirements.keyword}%`,
+    )
   }
 
   const order = {
@@ -89,12 +92,12 @@ const getQuestions = async (paging, questionsPerPage, requirements = {}) => {
   }
 
   const limit = {
-    sql: 'LIMIT ?, ? ',
+    sql: 'LIMIT ?, ?',
     binding: [paging * questionsPerPage, questionsPerPage],
   }
 
   const questionQuery =
-    'SELECT questions.*, categories.category, user.id AS user_id, user.nickname, picture.picture_URL AS pictureURL FROM questions, user, categories, picture WHERE questions.user_id = user.id AND questions.category_id = categories.id AND user.picture_id = picture.id AND start_time > ? AND start_time < ?' +
+    'SELECT questions.*, categories.category, user.id AS user_id, user.nickname, picture.picture_URL AS pictureURL FROM questions, user, categories, picture WHERE questions.user_id = user.id AND questions.category_id = categories.id AND user.picture_id = picture.id AND start_time > ? AND start_time < ? ' +
     condition.sql +
     order.sql +
     limit.sql
