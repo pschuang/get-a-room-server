@@ -1,6 +1,7 @@
 const db = require('./mysqlconf')
-const { BULLETIN_OPEN_TIME_UTC } = process.env
+const { BULLETIN_OPEN_TIME_SPAN } = process.env
 const dayjs = require('dayjs')
+const redis = require('../util/cache')
 
 const getQuestionsDetails = async (questionId) => {
   const [details] = await db.query(
@@ -58,10 +59,9 @@ const getQuestionsDetails = async (questionId) => {
 
 const getQuestions = async (paging, questionsPerPage, requirements = {}) => {
   // 只撈布告欄開放時間內建立的問題
-  const bulletinOpenUTC = BULLETIN_OPEN_TIME_UTC
-  const openTimeTodayUTC = dayjs().format('YYYY-MM-DD ') + bulletinOpenUTC
+  const openTimeTodayUTC = await redis.get(dayjs().utc().format('YYYY-MM-DD'))
   const closeTimeTodayUTC = dayjs(openTimeTodayUTC)
-    .add(60, 'minute')
+    .add(BULLETIN_OPEN_TIME_SPAN, 'minute')
     .format('YYYY-MM-DD HH:mm:ss')
   const condition = {
     sql: '',
@@ -81,10 +81,7 @@ const getQuestions = async (paging, questionsPerPage, requirements = {}) => {
   } else if (requirements.category && requirements.keyword) {
     // console.log('category with keyword')
     condition.sql += 'AND categories.category = ? AND questions.content LIKE ? '
-    condition.binding.push(
-      requirements.category,
-      `%${requirements.keyword}%`,
-    )
+    condition.binding.push(requirements.category, `%${requirements.keyword}%`)
   }
 
   const order = {
@@ -119,10 +116,9 @@ const getQuestions = async (paging, questionsPerPage, requirements = {}) => {
 
 const checkStatus = async (userId) => {
   // 加上時間判斷
-  const bulletinOpenUTC = BULLETIN_OPEN_TIME_UTC
-  const openTimeTodayUTC = dayjs().format('YYYY-MM-DD ') + bulletinOpenUTC
+  const openTimeTodayUTC = await redis.get(dayjs().utc().format('YYYY-MM-DD'))
   const closeTimeTodayUTC = dayjs(openTimeTodayUTC)
-    .add(60, 'minute')
+    .add(BULLETIN_OPEN_TIME_SPAN, 'minute')
     .format('YYYY-MM-DD HH:mm:ss')
 
   const [question] = await db.query(

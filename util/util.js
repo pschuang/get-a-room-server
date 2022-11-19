@@ -1,5 +1,6 @@
 require('dotenv').config()
-const { TOKEN_SECRET, BULLETIN_OPEN_TIME_UTC } = process.env
+const { TOKEN_SECRET, BULLETIN_OPEN_TIME_SPAN } = process.env
+const redis = require('./cache')
 const jwt = require('jsonwebtoken')
 const dayjs = require('dayjs')
 var utc = require('dayjs/plugin/utc')
@@ -27,7 +28,6 @@ const authentication = async (req, res, next) => {
   try {
     accessToken = accessToken.split(' ')[1]
     const user = jwt.verify(accessToken, TOKEN_SECRET)
-    console.log('user: ', user)
     req.user = user
     next()
   } catch (error) {
@@ -36,13 +36,17 @@ const authentication = async (req, res, next) => {
   }
 }
 
-const isBulletinOpen = (req, res, next) => {
-  // 布告欄開放時間 Asia/Taipei 16:00:00   UTC 08:00:00
-  const openTimeTodayUTC =
-    dayjs().format('YYYY-MM-DD ') + BULLETIN_OPEN_TIME_UTC
-  const closeTimeTodayUTC = dayjs(openTimeTodayUTC).add(120, 'minute')
-
+const isBulletinOpen = async (req, res, next) => {
   const nowUTC = dayjs().utc() // 這邊 .utc() 會把轉換時區到 utc
+
+  // 從 redis 撈時間
+  const openTimeTodayUTC = await redis.get(nowUTC.format('YYYY-MM-DD'))
+  console.log('time:', openTimeTodayUTC)
+
+  const closeTimeTodayUTC = dayjs(openTimeTodayUTC).add(
+    BULLETIN_OPEN_TIME_SPAN,
+    'minute'
+  )
 
   console.log('Today bulletin is open at: ', openTimeTodayUTC)
   console.log(
@@ -57,6 +61,8 @@ const isBulletinOpen = (req, res, next) => {
     closeTimeTodayUTC.utc(true)
   )
 
+  // 布告欄下一個開啟時間
+  const nextOpenAt = await redis.get(nowUTC.add(1, 'day').format('YYYY-MM-DD'))
   if (canGetIn) {
     // 在時間內的話放行
     console.log('bulletin is open')
@@ -64,7 +70,12 @@ const isBulletinOpen = (req, res, next) => {
   } else {
     // 不在時間內則擋住
     console.log('bulletin is close')
-    res.status(403).json({ message: 'the bulletin is close' })
+
+    res.status(423).json({
+      message: 'the bulletin is closed',
+      closedAt: closeTimeTodayUTC.format('YYYY-MM-DD HH:mm:ss'),
+      nextOpenAt,
+    })
     return
   }
 }
