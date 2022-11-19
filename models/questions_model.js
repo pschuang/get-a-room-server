@@ -5,7 +5,7 @@ const redis = require('../util/cache')
 
 const getQuestionsDetails = async (questionId) => {
   const [details] = await db.query(
-    `SELECT questions.user_id, questions.content, replies.user_id AS userId, replies.reply AS answer, user.nickname, picture.picture_URL AS pictureURL
+    `SELECT questions.user_id, questions.content, questions.is_closed, replies.user_id AS userId, replies.reply AS answer, user.nickname, picture.picture_URL AS pictureURL
     FROM questions
     LEFT JOIN replies 
     ON questions.id = replies.question_id
@@ -53,7 +53,12 @@ const getQuestionsDetails = async (questionId) => {
   }
   console.log('repliers: ', repliers)
 
-  const data = { content: details[0].content, repliers, questionUserId }
+  const data = {
+    content: details[0].content,
+    repliers,
+    questionUserId,
+    isClosed: details[0].is_closed,
+  }
   return data
 }
 
@@ -171,6 +176,13 @@ const createReply = async (userId, questionId, reply) => {
   )
 }
 
+const closeQuestion = async (questionId) => {
+  await db.query('UPDATE questions SET is_closed = 1 WHERE id = ?', [
+    questionId,
+  ])
+  console.log(`closed question ${questionId}`)
+}
+
 module.exports = {
   getQuestionsDetails,
   getQuestions,
@@ -178,4 +190,5 @@ module.exports = {
   getReplyCounts,
   createQuestion,
   createReply,
+  closeQuestion,
 }

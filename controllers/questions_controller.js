@@ -59,14 +59,14 @@ const getQuestionsDetails = async (req, res) => {
   const { questionId } = req.params
   console.log(questionId)
 
-  const { content, repliers, questionUserId } =
+  const { content, repliers, questionUserId, isClosed } =
     await Questions.getQuestionsDetails(questionId)
 
   if (questionUserId !== userId) {
     res.status(403).json({ message: 'not authorized to view this question' })
     return
   }
-  res.json({ content, repliers })
+  res.json({ content, repliers, isClosed })
 }
 
 const checkStatus = async (req, res) => {
