@@ -6,22 +6,20 @@ const signUp = async (req, res) => {
   // 收到使用者註冊資訊
   const { name, nickname, email, password, picture_id } = req.body
   if (!name || !nickname || !email || !password || !picture_id) {
-    res
-      .status(400)
-      .send({ error: 'Request error: all fields for sign up are required.' })
+    res.status(400).send({ error: 'All fields for sign up are required.' })
     return
   }
 
   if (!validator.isEmail(email)) {
-    res.status(400).send({ error: 'Request Error: Invalid email format' })
+    res.status(400).send({ error: 'Invalid email format' })
     return
   }
 
   const result = await User.signUp(name, nickname, email, password, picture_id)
 
-  const { user, error } = result
+  const { user, error, status } = result
   if (error) {
-    res.status(403).json({ error: result.error })
+    res.status(status).json({ error: result.error })
     return
   }
 
@@ -44,9 +42,9 @@ const signUp = async (req, res) => {
 
 const signIn = async (req, res) => {
   const { email, password } = req.body
-  console.log(email, password)
   if (!email || !password) {
     res.status(400).json({ error: 'email and password are required.' })
+    return
   }
 
   const result = await User.signIn(email, password)

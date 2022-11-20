@@ -15,7 +15,7 @@ const signUp = async (name, nickname, email, password, pictureId) => {
     )
 
     if (checkEmail.length != 0) {
-      throw new Error('This email already exists.')
+      return { error: 'This email already exists.', status: 403 }
     }
 
     const user = {
@@ -58,7 +58,9 @@ const signIn = async (email, password) => {
     const [users] = await conn.query('SELECT * FROM user WHERE email = ?', [
       email,
     ])
-    // TODO: 找不到 email 的情況
+    if (users.length === 0) {
+      return { error: 'cannot find email', status: 400 }
+    }
     const user = users[0]
     if (!bcrypt.compareSync(password, user.password)) {
       return { error: 'Wrong password', status: 403 }
