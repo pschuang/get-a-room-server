@@ -35,8 +35,23 @@ const checkUserAuth = async (userId, roomId) => {
   return canJoinRoom
 }
 
+const getCounterPartInfo = async (userId, roomId) => {
+  const [result] = await db.query(
+    'SELECT user.nickname, picture.picture_URL AS pictureURL FROM friends, user, picture WHERE user.id = friends.friend_user_id AND user.picture_id = picture.id AND friends.user_id = ? AND friends.room_id = ?',
+    [userId, roomId]
+  )
+
+  const data = {
+    nickname: result[0].nickname,
+    pictureURL: result[0].pictureURL,
+  }
+
+  return data
+}
+
 module.exports = {
   getMessages,
   createMessage,
   checkUserAuth,
+  getCounterPartInfo,
 }
