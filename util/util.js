@@ -73,6 +73,7 @@ const isBulletinOpen = async (req, res, next) => {
 
     res.status(423).json({
       message: 'the bulletin is closed',
+      openAt: openTimeTodayUTC,
       closedAt: closeTimeTodayUTC.format('YYYY-MM-DD HH:mm:ss'),
       nextOpenAt,
     })
