@@ -14,7 +14,8 @@ dayjs.extend(utc)
 
 const Chatroom = require('./models/chatroom_model')
 const Questions = require('./models/questions_model')
-const EXPIRE_TIME = 30 // match 和 room 的 redis key expire 時間先設定 30 秒 之後要改成 24 hr
+const Friends = require('./models/friends_model')
+const EXPIRE_TIME = 24 * 60 * 1000 // match 和 room 的 redis key expire 時間先設定 30 秒 之後要改成 24 hr
 
 const io = new Server(server, {
   cors: {
@@ -125,9 +126,6 @@ io.on('connection', (socket) => {
       return
     }
 
-    // questions table 的 is_closed 改成 1
-    await Questions.closeQuestion(parseInt(data.questionId))
-
     // 判斷選擇的人是不是已經配對過
     const matchList = await redis.lrange('match-list', 0, -1)
     if (matchList.includes(data.counterpart.toString())) {
@@ -168,11 +166,22 @@ io.on('connection', (socket) => {
       isPassive: true, // 被選中的人是多回傳 isPassive: true
     })
 
+    // questions table 的 is_closed 改成 1
+    await Questions.closeQuestion(parseInt(data.questionId))
+
     // TODO: 15 分鐘後結束聊天室
-    // setTimeout(() => {
-    //   socket.emit('match-time-end')
-    //   users[data.counterpart].emit('match-time-end')
-    // }, 7000)
+    setTimeout(() => {
+      socket.emit('match-time-end')
+      users[data.counterpart].emit('match-time-end')
+      // 結束聊天後，一分鐘後再檢查
+      setTimeout(async () => {
+        const lengthOfAgreeList = await redis.llen(roomId)
+        if (lengthOfAgreeList < 2) {
+          socket.emit('be-friends-fail')
+          users[data.counterpart].emit('be-friends-fail')
+        }
+      }, 10000)
+    }, 20000)
   })
 
   // client 端點擊好友發送 join-room 事件
@@ -208,6 +217,29 @@ io.on('connection', (socket) => {
     console.log('socket rooms after: ', socket.rooms)
 
     // socket.emit('join-room-ok')
+  })
+
+  // client 發送 agree-to-be-friends 事件
+  socket.on('agree-to-be-friend', async ({ roomId, userId }) => {
+    // 在 redis 紀錄
+    const lengthOfAgreeList = await redis.llen(roomId)
+    if (lengthOfAgreeList === 0) {
+      await redis.lpush(roomId, userId)
+      await redis.expire(roomId, EXPIRE_TIME)
+    }
+    if (lengthOfAgreeList === 1) {
+      await redis.lpush(roomId, userId)
+      // 找到聊天對象 user_id
+      const result = await redis.hget('room:' + roomId, 'members')
+      const members = JSON.parse(result)
+      await Friends.createFriendship(roomId, members)
+      // 通知雙方已成為好友
+      members.forEach((member) => {
+        users[member].emit('be-friends-success')
+      })
+    }
+
+    //
   })
 })
 
