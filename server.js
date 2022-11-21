@@ -109,9 +109,11 @@ io.on('connection', (socket) => {
     Chatroom.createMessage(socket.user.id, message, roomId)
 
     // 轉發
-    socket
-      .to(roomId)
-      .emit('receive-message-from-friend', { userId: socket.user.id, message })
+    socket.to(roomId).emit('receive-message-from-friend', {
+      userId: socket.user.id,
+      message,
+      created_at: dayjs().utc().format('YYYY-MM-DD HH:mm:ss'),
+    })
   })
 
   // client 端點擊 repliers 發送 create room 事件後
