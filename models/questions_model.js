@@ -16,6 +16,9 @@ const getQuestionsDetails = async (questionId) => {
     WHERE questions.id = ?`,
     [questionId]
   )
+  if (details.length === 0) {
+    return { error: 'no such question' }
+  }
 
   // 問問題的人的 userId
   const questionUserId = details[0].user_id
