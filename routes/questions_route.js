@@ -12,12 +12,18 @@ const {
 
 router
   .route('/questions/status')
-  .get(authentication, isBulletinOpen, checkStatus)
-router.route('/questions/:category').get(isBulletinOpen, getQuestions)
+  .get(authentication, isBulletinOpen, wrapAsync(checkStatus))
+router
+  .route('/questions/:category')
+  .get(isBulletinOpen, wrapAsync(getQuestions))
 router
   .route('/questions/details/:questionId')
-  .get(authentication, isBulletinOpen, getQuestionsDetails)
-router.route('/questions').post(authentication, isBulletinOpen, createQuestion)
-router.route('/reply').post(authentication, isBulletinOpen, createReply)
+  .get(authentication, isBulletinOpen, wrapAsync(getQuestionsDetails))
+router
+  .route('/questions')
+  .post(authentication, isBulletinOpen, wrapAsync(createQuestion))
+router
+  .route('/reply')
+  .post(authentication, isBulletinOpen, wrapAsync(createReply))
 
 module.exports = router

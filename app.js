@@ -24,11 +24,8 @@ app.use(function (req, res) {
 
 // Error handling
 app.use(function (err, req, res, next) {
-  console.log(err)
+  console.log('ERROR:', err)
   res.status(500).send({ message: 'Internal Server Error' })
 })
 
-
 module.exports = app
-
-
