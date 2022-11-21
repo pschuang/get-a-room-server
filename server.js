@@ -4,7 +4,12 @@ const { Server } = require('socket.io')
 const app = require('./app')
 const server = http.createServer(app)
 
-const { PORT, TOKEN_SECRET } = process.env
+const {
+  PORT,
+  TOKEN_SECRET,
+  MATCH_CHATROOM_TIME_SPAN,
+  DECIDE_TO_BE_FRIEND_TIME_SPAN,
+} = process.env
 const { v4: uuidv4 } = require('uuid')
 const redis = require('./util/cache')
 const jwt = require('jsonwebtoken')
@@ -171,7 +176,7 @@ io.on('connection', (socket) => {
     // questions table 的 is_closed 改成 1
     await Questions.closeQuestion(parseInt(data.questionId))
 
-    // TODO: 15 分鐘後結束聊天室
+    // 15 分鐘後結束聊天室
     setTimeout(() => {
       socket.emit('match-time-end')
       users[data.counterpart].emit('match-time-end')
@@ -182,8 +187,8 @@ io.on('connection', (socket) => {
           socket.emit('be-friends-fail')
           users[data.counterpart].emit('be-friends-fail')
         }
-      }, 10000)
-    }, 20000)
+      }, DECIDE_TO_BE_FRIEND_TIME_SPAN)
+    }, MATCH_CHATROOM_TIME_SPAN)
   })
 
   // client 端點擊好友發送 join-room 事件
