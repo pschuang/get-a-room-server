@@ -94,11 +94,13 @@ io.on('connection', (socket) => {
       users[members[1]].emit('receive-message', {
         userId: msg.userId,
         message: msg.message,
+        created_at: dayjs().utc().format('YYYY-MM-DD HH:mm:ss'),
       })
     } else if (members[1] == socket.user.id) {
       users[members[0]].emit('receive-message', {
         userId: msg.userId,
         message: msg.message,
+        created_at: dayjs().utc().format('YYYY-MM-DD HH:mm:ss'),
       })
     } else {
       console.error('sth wrong....')
