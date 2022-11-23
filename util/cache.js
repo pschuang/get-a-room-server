@@ -1,5 +1,5 @@
 const Redis = require('ioredis')
-require('dotenv').config()
+require('dotenv').config({ path: '../.env' })
 const { CACHE_PORT, CACHE_HOST, CACHE_USER, CACHE_PASSWORD } = process.env
 
 const redis = new Redis({
