@@ -15,6 +15,7 @@ app.use('/api/' + API_VERSION, [
   require('./routes/friends_route'),
   require('./routes/questions_route'),
   require('./routes/user_route'),
+  require('./routes/admin_route'),
 ])
 
 // page not found

@@ -30,10 +30,7 @@ const io = new Server(server, {
 })
 
 let users = {}
-// io.use((socket, next) => {
-//   console.log('the error middleware')
-//   next(new Error('thou shall not pass'))
-// })
+let countOfClinents = 0
 io.use((socket, next) => {
   console.log('the socket auth middleware')
   // console.log('TOKEN:', socket.handshake.auth.token)
@@ -57,15 +54,18 @@ io.on('connection', (socket) => {
   console.log('users on connection:', Object.keys(users))
 
   // count the current connections
-  const count = io.engine.clientsCount
-  console.log(`${count}th user is connected`)
+  countOfClinents++
+  console.log('someone connected, now connection count: ', countOfClinents)
+  io.emit('online-count', countOfClinents) // TODO: 需要改成只發給有 admin 權限的
 
   // ======== EVENTS ========= //
   // disconnect
   socket.on('disconnect', () => {
     console.log('Got disconnected')
+    countOfClinents--
+    console.log('someone disconnected, now connection count: ', countOfClinents)
     delete users[socket.user.id]
-    // console.log('users:', users)
+    io.emit('online-count', countOfClinents) // TODO: 需要改成只發給有 admin 權限的
   })
 
   // 收到訊息後轉發同個聊天室
