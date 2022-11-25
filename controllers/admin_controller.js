@@ -15,6 +15,12 @@ const getDailyStats = async (req, res) => {
   })
 }
 
+const getWeekStats = async (req, res) => {
+  const questionsInAWeek = await Admin.getQuestionsInAWeek()
+  res.json({ questionsInAWeek })
+}
+
 module.exports = {
   getDailyStats,
+  getWeekStats,
 }

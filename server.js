@@ -20,6 +20,7 @@ dayjs.extend(utc)
 const Chatroom = require('./models/chatroom_model')
 const Questions = require('./models/questions_model')
 const Friends = require('./models/friends_model')
+const Admin = require('./models/admin_model')
 const EXPIRE_TIME = 24 * 60 * 1000 // match 和 room 的 redis key expire 時間先設定 30 秒 之後要改成 24 hr
 
 const io = new Server(server, {
@@ -249,6 +250,27 @@ io.on('connection', (socket) => {
     }
 
     //
+  })
+
+  // refresh dashboard event
+  socket.on('refresh-dashboard', async () => {
+    console.log('received refresh-dashboard event')
+    // TODO: 權限管理: 管理員腳色才能收到回覆
+    // 收到前端請求後，從 model 拿資料並回傳
+    const askedQuestionCount = await Admin.getAskedQuestionCount()
+    const openQuestionCount = await Admin.getOpenQuestionCount()
+    const questionCountByCategory = await Admin.getQuestionsCountByCategory()
+    const userCount = await Admin.getUserCount()
+    const friendshipCount = await Admin.getFriendshipCount()
+
+    console.log('refresh success')
+    socket.emit('refresh-dashboard-success', {
+      askedQuestionCount,
+      openQuestionCount,
+      questionCountByCategory,
+      userCount,
+      friendshipCount,
+    })
   })
 })
 
