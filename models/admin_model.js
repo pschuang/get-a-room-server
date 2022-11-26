@@ -11,15 +11,8 @@ var utc = require('dayjs/plugin/utc')
 dayjs.extend(utc)
 
 const getAskedQuestionCount = async () => {
-  let openTimeTodayUTC
-  // 取 "今天" 布告欄開啟的時間區間
-  if (redis.ready) {
-    openTimeTodayUTC = await redis.get(dayjs().utc().format('YYYY-MM-DD'))
-    console.log('open time: ', openTimeTodayUTC)
-  } else {
-    // 如果 redis 關閉，則布告欄開放時間都定為台灣時間 16:00
-    openTimeTodayUTC = dayjs().utc().format('YYYY-MM-DD') + ' 08:00:00'
-  }
+  const openTimeTodayUTC = await redis.get(dayjs().utc().format('YYYY-MM-DD'))
+  console.log('open time: ', openTimeTodayUTC)
 
   const closeTimeTodayUTC = dayjs(openTimeTodayUTC)
     .add(BULLETIN_OPEN_TIME_SPAN, 'minute')
@@ -37,12 +30,7 @@ const getAskedQuestionCount = async () => {
 }
 
 const getOpenQuestionCount = async () => {
-  let openTimeTodayUTC
-  if (redis.ready) {
-    openTimeTodayUTC = await redis.get(dayjs().utc().format('YYYY-MM-DD'))
-  } else {
-    openTimeTodayUTC = dayjs().utc().format('YYYY-MM-DD') + ' 08:00:00'
-  }
+  const openTimeTodayUTC = await redis.get(dayjs().utc().format('YYYY-MM-DD'))
   const closeTimeTodayUTC = dayjs(openTimeTodayUTC)
     .add(BULLETIN_OPEN_TIME_SPAN, 'minute')
     .format('YYYY-MM-DD HH:mm:ss')
@@ -60,12 +48,7 @@ const getOpenQuestionCount = async () => {
 }
 
 const getQuestionsCountByCategory = async () => {
-  let openTimeTodayUTC
-  if (redis.ready) {
-    openTimeTodayUTC = await redis.get(dayjs().utc().format('YYYY-MM-DD'))
-  } else {
-    openTimeTodayUTC = dayjs().utc().format('YYYY-MM-DD') + ' 08:00:00'
-  }
+  const openTimeTodayUTC = await redis.get(dayjs().utc().format('YYYY-MM-DD'))
   const closeTimeTodayUTC = dayjs(openTimeTodayUTC)
     .add(BULLETIN_OPEN_TIME_SPAN, 'minute')
     .format('YYYY-MM-DD HH:mm:ss')
@@ -82,12 +65,8 @@ const getQuestionsCountByCategory = async () => {
 }
 
 const getUserCount = async () => {
-  let openTimeTodayUTC
-  if (redis.ready) {
-    openTimeTodayUTC = await redis.get(dayjs().utc().format('YYYY-MM-DD'))
-  } else {
-    openTimeTodayUTC = dayjs().utc().format('YYYY-MM-DD') + ' 08:00:00'
-  }
+  const openTimeTodayUTC = await redis.get(dayjs().utc().format('YYYY-MM-DD'))
+
   const closeTimeTodayUTC = dayjs(openTimeTodayUTC)
     .add(BULLETIN_OPEN_TIME_SPAN, 'minute')
     .format('YYYY-MM-DD HH:mm:ss')
@@ -104,12 +83,8 @@ const getUserCount = async () => {
 }
 
 const getFriendshipCount = async () => {
-  let openTimeTodayUTC
-  if (redis.ready) {
-    openTimeTodayUTC = await redis.get(dayjs().utc().format('YYYY-MM-DD'))
-  } else {
-    openTimeTodayUTC = dayjs().utc().format('YYYY-MM-DD') + ' 08:00:00'
-  }
+  const openTimeTodayUTC = await redis.get(dayjs().utc().format('YYYY-MM-DD'))
+
   const closeTimeTodayUTC = dayjs(openTimeTodayUTC)
     .add(
       BULLETIN_OPEN_TIME_SPAN +
@@ -141,6 +116,27 @@ const getQuestionsInAWeek = async () => {
   return result
 }
 
+const getReplyCount = async () => {
+  try {
+    const openTimeTodayUTC = await redis.get(dayjs().utc().format('YYYY-MM-DD'))
+
+    const closeTimeTodayUTC = dayjs(openTimeTodayUTC)
+      .add(BULLETIN_OPEN_TIME_SPAN, 'minute')
+      .format('YYYY-MM-DD HH:mm:ss')
+
+    const [result] = await db.query(
+      'SELECT count(*) AS count FROM replies WHERE time > ? AND time < ?',
+      [openTimeTodayUTC, closeTimeTodayUTC]
+    )
+    return result[0].count
+  } catch (error) {
+    console.log(error)
+    return { error }
+  }
+}
+
+getReplyCount()
+
 module.exports = {
   getAskedQuestionCount,
   getOpenQuestionCount,
@@ -148,4 +144,5 @@ module.exports = {
   getUserCount,
   getFriendshipCount,
   getQuestionsInAWeek,
+  getReplyCount,
 }

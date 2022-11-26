@@ -21,6 +21,7 @@ const Chatroom = require('./models/chatroom_model')
 const Questions = require('./models/questions_model')
 const Friends = require('./models/friends_model')
 const Admin = require('./models/admin_model')
+const { Dayjs } = require('dayjs')
 const EXPIRE_TIME = 24 * 60 * 1000 // match 和 room 的 redis key expire 時間先設定 30 秒 之後要改成 24 hr
 
 const io = new Server(server, {
@@ -176,6 +177,12 @@ io.on('connection', (socket) => {
       isPassive: true, // 被選中的人是多回傳 isPassive: true
     })
 
+    // 推播到 dashboard
+    socket.to('recent-matches-notify-room').emit('recent-match', {
+      users: [socket.user.id, data.counterpart],
+      time: dayjs().utc().format('YYYY-MM-DD HH:mm:ss'),
+    })
+
     // questions table 的 is_closed 改成 1
     await Questions.closeQuestion(parseInt(data.questionId))
 
@@ -252,6 +259,16 @@ io.on('connection', (socket) => {
     //
   })
 
+  // 加入 dashboard 事件
+  socket.on('join-recent-matches-notify-room', () => {
+    console.log('received join-recent-matches-notify-room event.....')
+    const currentRooms = Array.from(socket.rooms)
+    console.log(currentRooms)
+    socket.leaveAll()
+    socket.join('recent-matches-notify-room')
+    console.log(Array.from(socket.rooms))
+  })
+
   // refresh dashboard event
   socket.on('refresh-dashboard', async () => {
     console.log('received refresh-dashboard event')
@@ -262,6 +279,7 @@ io.on('connection', (socket) => {
     const questionCountByCategory = await Admin.getQuestionsCountByCategory()
     const userCount = await Admin.getUserCount()
     const friendshipCount = await Admin.getFriendshipCount()
+    const replyCount = await Admin.getReplyCount()
 
     console.log('refresh success')
     socket.emit('refresh-dashboard-success', {
@@ -270,6 +288,7 @@ io.on('connection', (socket) => {
       questionCountByCategory,
       userCount,
       friendshipCount,
+      replyCount,
     })
   })
 })

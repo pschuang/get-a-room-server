@@ -67,12 +67,7 @@ const getQuestionsDetails = async (questionId) => {
 
 const getQuestions = async (paging, questionsPerPage, requirements = {}) => {
   // 只撈布告欄開放時間內建立的問題
-  let openTimeTodayUTC
-  if (redis.ready) {
-    openTimeTodayUTC = await redis.get(dayjs().utc().format('YYYY-MM-DD'))
-  } else {
-    openTimeTodayUTC = dayjs().utc().format('YYYY-MM-DD') + ' 08:00:00'
-  }
+  const openTimeTodayUTC = await redis.get(dayjs().utc().format('YYYY-MM-DD'))
   const closeTimeTodayUTC = dayjs(openTimeTodayUTC)
     .add(BULLETIN_OPEN_TIME_SPAN, 'minute')
     .format('YYYY-MM-DD HH:mm:ss')
@@ -129,12 +124,8 @@ const getQuestions = async (paging, questionsPerPage, requirements = {}) => {
 
 const checkStatus = async (userId) => {
   // 加上時間判斷
-  let openTimeTodayUTC
-  if (redis.ready) {
-    openTimeTodayUTC = await redis.get(dayjs().utc().format('YYYY-MM-DD'))
-  } else {
-    openTimeTodayUTC = dayjs().utc().format('YYYY-MM-DD') + ' 08:00:00'
-  }
+  const openTimeTodayUTC = await redis.get(dayjs().utc().format('YYYY-MM-DD'))
+
   const closeTimeTodayUTC = dayjs(openTimeTodayUTC)
     .add(BULLETIN_OPEN_TIME_SPAN, 'minute')
     .format('YYYY-MM-DD HH:mm:ss')

@@ -38,19 +38,9 @@ const authentication = async (req, res, next) => {
 
 const isBulletinOpen = async (req, res, next) => {
   const nowUTC = dayjs().utc() // 這邊 .utc() 會把轉換時區到 utc
-  let openTimeTodayUTC
-  let nextOpenAt
-  if (redis.ready) {
-    // 如果 redis 為開啟狀態
-    // 從 redis 撈時間
-    openTimeTodayUTC = await redis.get(nowUTC.format('YYYY-MM-DD'))
-    // 布告欄下一個開啟時間
-    nextOpenAt = await redis.get(nowUTC.add(1, 'day').format('YYYY-MM-DD'))
-  } else {
-    // 如果 redis 關閉，則布告欄開放時間都定為台灣時間 16:00
-    openTimeTodayUTC = nowUTC.format('YYYY-MM-DD') + ' 08:00:00'
-    nextOpenAt = nowUTC.add(1, 'day').format('YYYY-MM-DD') + ' 08:00:00'
-  }
+  const openTimeTodayUTC = await redis.get(nowUTC.format('YYYY-MM-DD'))
+  // 布告欄下一個開啟時間
+  const nextOpenAt = await redis.get(nowUTC.add(1, 'day').format('YYYY-MM-DD'))
 
   console.log('time:', openTimeTodayUTC)
 
