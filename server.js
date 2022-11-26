@@ -48,7 +48,7 @@ io.use((socket, next) => {
   }
 })
 
-io.on('connection', (socket) => {
+io.on('connection', async (socket) => {
   console.log(`socket ${socket.id} is connected`)
 
   // 紀錄 user 的 socket
@@ -291,6 +291,9 @@ io.on('connection', (socket) => {
       replyCount,
     })
   })
+
+  // 紀錄 page views => 在 redis 紀錄
+  await redis.lpush('page-view-list', socket.user.id)
 })
 
 server.listen(PORT, () => {

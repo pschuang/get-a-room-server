@@ -135,7 +135,14 @@ const getReplyCount = async () => {
   }
 }
 
-getReplyCount()
+const getPageViewsInAWeek = async () => {
+  const todayUTC = dayjs().utc().format('YYYY-MM-DD')
+  const [result] = await db.query(
+    `SELECT * FROM page_views WHERE time <= ? ORDER BY time DESC LIMIT 7`,
+    [todayUTC]
+  )
+  return result
+}
 
 module.exports = {
   getAskedQuestionCount,
@@ -145,4 +152,5 @@ module.exports = {
   getFriendshipCount,
   getQuestionsInAWeek,
   getReplyCount,
+  getPageViewsInAWeek,
 }
