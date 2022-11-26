@@ -185,17 +185,29 @@ io.on('connection', async (socket) => {
 
     // questions table 的 is_closed 改成 1
     await Questions.closeQuestion(parseInt(data.questionId))
+  })
+
+  // 被選者答應加入聊天
+  socket.on('counterpart-join-match-room', async ({ roomId, counterpart }) => {
+    const matchEndTime = dayjs()
+      .utc()
+      .add(MATCH_CHATROOM_TIME_SPAN / 1000, 'second')
+      .format('YYYY-MM-DD HH:mm:ss')
+
+    // 傳送結束時間給雙方前端
+    socket.emit('match-end-time', matchEndTime)
+    users[counterpart].emit('match-end-time', matchEndTime)
 
     // 15 分鐘後結束聊天室
     setTimeout(() => {
       socket.emit('match-time-end')
-      users[data.counterpart].emit('match-time-end')
+      users[counterpart].emit('match-time-end')
       // 結束聊天後，一分鐘後再檢查
       setTimeout(async () => {
         const lengthOfAgreeList = await redis.llen(roomId)
         if (lengthOfAgreeList < 2) {
           socket.emit('be-friends-fail')
-          users[data.counterpart].emit('be-friends-fail')
+          users[counterpart].emit('be-friends-fail')
         }
       }, DECIDE_TO_BE_FRIEND_TIME_SPAN)
     }, MATCH_CHATROOM_TIME_SPAN)

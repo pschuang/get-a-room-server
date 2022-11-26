@@ -79,6 +79,7 @@ const isBulletinOpen = async (req, res, next) => {
     closeTimeTodayUTC.utc(true)
   )
 
+  req.bulletinCloseTime = closeTimeTodayUTC.format('YYYY-MM-DD HH:mm:ss')
   if (canGetIn) {
     // 在時間內的話放行
     console.log('bulletin is open')
