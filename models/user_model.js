@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt')
 const salt = parseInt(process.env.BCRYPT_SALT)
 const { TOKEN_EXPIRE, TOKEN_SECRET } = process.env // 30 days by seconds
 const jwt = require('jsonwebtoken')
+const dayjs = require('dayjs')
 
 const signUp = async (name, nickname, email, password, pictureId) => {
   const conn = await db.getConnection()
@@ -24,6 +25,7 @@ const signUp = async (name, nickname, email, password, pictureId) => {
       email,
       password: bcrypt.hashSync(password, salt),
       picture_id: pictureId,
+      created_at: dayjs().utc().format('YYYY-MM-DD HH:mm:ss'),
     }
 
     const accessToken = jwt.sign(
