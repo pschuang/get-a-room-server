@@ -9,6 +9,10 @@ var timezone = require('dayjs/plugin/timezone') // dependent on utc plugin
 dayjs.extend(utc)
 dayjs.extend(timezone)
 dayjs.extend(isBetween)
+const role = {
+  ADMIN: 1,
+  USER: 2,
+}
 
 const wrapAsync = (fn) => {
   return function (req, res, next) {
@@ -33,6 +37,19 @@ const authentication = async (req, res, next) => {
   } catch (error) {
     res.status(403).json({ message: error.message })
     return
+  }
+}
+
+const authorization = async (req, res, next) => {
+  const roleId = req.user.role
+
+  if (roleId === role.ADMIN) {
+    next()
+  }
+  if (roleId === role.USER) {
+    return res
+      .status(403)
+      .json({ message: 'Sorry, you are not authorized to use this page' })
   }
 }
 
@@ -83,5 +100,6 @@ const isBulletinOpen = async (req, res, next) => {
 module.exports = {
   wrapAsync,
   authentication,
+  authorization,
   isBulletinOpen,
 }

@@ -75,6 +75,7 @@ const signIn = async (email, password) => {
         nickname: user.nickname,
         email: user.email,
         picture_id: user.picture_id,
+        role: user.role,
       },
       TOKEN_SECRET,
       {
