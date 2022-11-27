@@ -21,7 +21,6 @@ const Chatroom = require('./models/chatroom_model')
 const Questions = require('./models/questions_model')
 const Friends = require('./models/friends_model')
 const Admin = require('./models/admin_model')
-const { Dayjs } = require('dayjs')
 const EXPIRE_TIME = 24 * 60 * 1000 // match 和 room 的 redis key expire 時間先設定 30 秒 之後要改成 24 hr
 
 const io = new Server(server, {
@@ -162,8 +161,6 @@ io.on('connection', async (socket) => {
     await redis.hmset('room:' + roomId, roomData)
     await redis.expire('room:' + roomId, EXPIRE_TIME) // 設定
 
-    console.log('roomData: ', roomData)
-
     // 紀錄已配對成功的人
     await redis.lpush('match-list', [socket.user.id, data.counterpart])
     await redis.expire('match-list', EXPIRE_TIME) // 設定
@@ -202,7 +199,7 @@ io.on('connection', async (socket) => {
     setTimeout(() => {
       socket.emit('match-time-end')
       users[counterpart].emit('match-time-end')
-      // 結束聊天後，一分鐘後再檢查
+      // 結束聊天後，1 分鐘後再檢查
       setTimeout(async () => {
         const lengthOfAgreeList = await redis.llen(roomId)
         if (lengthOfAgreeList < 2) {
@@ -232,8 +229,8 @@ io.on('connection', async (socket) => {
       console.log(`cannot join`)
       return
     }
-    // JOIN 另外一個 room 之前要先離開其他 rooms (但要保留自己的 socket.id 的那個 room)
 
+    // JOIN 另外一個 room 之前要先離開其他 rooms (但要保留自己的 socket.id 的那個 room)
     const currentRooms = Array.from(socket.rooms)
     console.log(currentRooms)
 
@@ -244,8 +241,6 @@ io.on('connection', async (socket) => {
 
     socket.join(roomId)
     console.log('socket rooms after: ', socket.rooms)
-
-    // socket.emit('join-room-ok')
   })
 
   // client 發送 agree-to-be-friends 事件
@@ -267,8 +262,6 @@ io.on('connection', async (socket) => {
         users[member].emit('be-friends-success')
       })
     }
-
-    //
   })
 
   // 加入 dashboard 事件
@@ -283,7 +276,6 @@ io.on('connection', async (socket) => {
 
   // refresh dashboard event
   socket.on('refresh-dashboard', async () => {
-    console.log('received refresh-dashboard event')
     // TODO: 權限管理: 管理員腳色才能收到回覆
     // 收到前端請求後，從 model 拿資料並回傳
     const askedQuestionCount = await Admin.getAskedQuestionCount()
@@ -292,8 +284,6 @@ io.on('connection', async (socket) => {
     const userCount = await Admin.getUserCount()
     const friendshipCount = await Admin.getFriendshipCount()
     const replyCount = await Admin.getReplyCount()
-
-    console.log('refresh success')
     socket.emit('refresh-dashboard-success', {
       askedQuestionCount,
       openQuestionCount,

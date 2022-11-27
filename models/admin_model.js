@@ -12,7 +12,6 @@ dayjs.extend(utc)
 
 const getAskedQuestionCount = async () => {
   const openTimeTodayUTC = await redis.get(dayjs().utc().format('YYYY-MM-DD'))
-  console.log('open time: ', openTimeTodayUTC)
 
   const closeTimeTodayUTC = dayjs(openTimeTodayUTC)
     .add(BULLETIN_OPEN_TIME_SPAN, 'minute')
