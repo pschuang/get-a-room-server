@@ -22,7 +22,6 @@ const getQuestionsDetails = async (questionId) => {
 
   // 問問題的人的 userId
   const questionUserId = details[0].user_id
-  console.log('question user id: ', questionUserId)
 
   const repliers = details.map((detail) => {
     return {
@@ -35,12 +34,8 @@ const getQuestionsDetails = async (questionId) => {
     }
   })
 
-  console.log('repliers: ', repliers)
-
   // 取得 回答問題的人的 userId
   const replierUserIds = repliers.map((replier) => replier.userId)
-
-  console.log("repliers' userID:", replierUserIds)
 
   // 找出該 回答問題的人 與 問問題的人 的 roomId，並在 replier 物件上加上 isFriend, roomId
   for (let i = 0; i < replierUserIds.length; i++) {
@@ -50,11 +45,9 @@ const getQuestionsDetails = async (questionId) => {
     )
     if (roomId.length === 0) continue
 
-    console.log(roomId)
     repliers[i].isFriend = true
     repliers[i].roomId = roomId[0].room_id
   }
-  console.log('repliers: ', repliers)
 
   const data = {
     content: details[0].content,
@@ -77,17 +70,13 @@ const getQuestions = async (paging, questionsPerPage, requirements = {}) => {
   }
 
   if (!requirements.category && !requirements.keyword) {
-    // console.log('all without keyword')
   } else if (!requirements.category && requirements.keyword) {
-    // console.log('all with keyword')
     condition.sql += 'AND questions.content LIKE ? '
     condition.binding.push(`%${requirements.keyword}%`)
   } else if (requirements.category && !requirements.keyword) {
-    // console.log('category without keyword')
     condition.sql += 'AND categories.category = ? '
     condition.binding.push(requirements.category)
   } else if (requirements.category && requirements.keyword) {
-    // console.log('category with keyword')
     condition.sql += 'AND categories.category = ? AND questions.content LIKE ? '
     condition.binding.push(requirements.category, `%${requirements.keyword}%`)
   }
@@ -158,8 +147,7 @@ const createQuestion = async (userId, categoryId, content) => {
     content: content,
     is_closed: 0,
   }
-  const [result] = await db.query(`INSERT INTO questions SET?`, question)
-  console.log(`created question successfully! question id: ${result.insertId}`)
+  await db.query(`INSERT INTO questions SET?`, question)
 }
 
 const createReply = async (userId, questionId, reply) => {
@@ -172,19 +160,13 @@ const createReply = async (userId, questionId, reply) => {
     time: currentDateTime,
   }
 
-  const [result] = await db.query(`INSERT INTO replies SET ?`, replyData)
-  console.log(
-    `Reply create at ${new Date().toLocaleString()} reply id: ${
-      result.insertId
-    }`
-  )
+  await db.query(`INSERT INTO replies SET ?`, replyData)
 }
 
 const closeQuestion = async (questionId) => {
   await db.query('UPDATE questions SET is_closed = 1 WHERE id = ?', [
     questionId,
   ])
-  console.log(`closed question ${questionId}`)
 }
 
 module.exports = {

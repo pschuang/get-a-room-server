@@ -23,7 +23,6 @@ const createMessage = async (userId, message, roomId) => {
     `INSERT INTO messages (send_user_id, content, created_at, room_id) VALUES (?, ?, ?, ?)`,
     [userId, message, currentDateTime, roomId]
   )
-  console.log(`insert message successfully! insertId: ${result.insertId}`)
 }
 
 const checkUserAuth = async (userId, roomId) => {

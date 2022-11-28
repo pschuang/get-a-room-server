@@ -23,7 +23,6 @@ const getQuestions = async (req, res) => {
           keyword,
         })
       default:
-        console.log('case default is called')
         return await Questions.getQuestions(paging, questionsPerPage, {
           category,
           keyword,
@@ -57,7 +56,6 @@ const getQuestionsDetails = async (req, res) => {
   const userId = req.user.id
   // 接 question_id
   const { questionId } = req.params
-  console.log(questionId)
 
   const { content, repliers, questionUserId, isClosed, error } =
     await Questions.getQuestionsDetails(questionId)

@@ -21,7 +21,7 @@ const Chatroom = require('./models/chatroom_model')
 const Questions = require('./models/questions_model')
 const Friends = require('./models/friends_model')
 const Admin = require('./models/admin_model')
-const EXPIRE_TIME = 30 // match 和 room 的 redis key expire 時間先設定 30 秒 之後要改成 24 hr
+const EXPIRE_TIME = 24 * 60 * 60 // match 和 room 的 redis key expire 時間先設定 30 秒 之後要改成 24 hr
 
 const io = new Server(server, {
   cors: {
@@ -33,9 +33,6 @@ const io = new Server(server, {
 let users = {}
 let countOfClinents = 0
 io.use((socket, next) => {
-  console.log('the socket auth middleware')
-  // console.log('TOKEN:', socket.handshake.auth.token)
-  // console.log('TOKEN:', socket.handshake.headers['Authorization'])
   try {
     const user = jwt.verify(socket.handshake.auth.token, TOKEN_SECRET)
     socket.user = user
@@ -48,7 +45,6 @@ io.use((socket, next) => {
 })
 
 io.on('connection', async (socket) => {
-  console.log(`socket ${socket.id} is connected`)
 
   // 紀錄 user 的 socket
   users[socket.user.id] = socket
@@ -56,24 +52,20 @@ io.on('connection', async (socket) => {
 
   // count the current connections
   countOfClinents++
-  console.log('someone connected, now connection count: ', countOfClinents)
-  io.emit('online-count', countOfClinents) // TODO: 需要改成只發給有 admin 權限的
+  io.emit('online-count', countOfClinents)
 
   // ======== EVENTS ========= //
   // disconnect
   socket.on('disconnect', () => {
-    console.log('Got disconnected')
     countOfClinents--
     console.log('someone disconnected, now connection count: ', countOfClinents)
     delete users[socket.user.id]
-    io.emit('online-count', countOfClinents) // TODO: 需要改成只發給有 admin 權限的
+    io.emit('online-count', countOfClinents)
   })
 
   // 收到訊息後轉發同個聊天室
   socket.on('send-message', async (msg) => {
     // msg: {roomId: xxx, message: 'hello', userId: 13}
-    console.log('msg:', msg)
-
     if (!msg.roomId) {
       socket.emit('room-not-exist', { message: 'room not exist' })
       return
@@ -88,9 +80,6 @@ io.on('connection', async (socket) => {
       return
     }
 
-    console.log('redis members', members)
-    // let members = rooms[msg.roomId].members
-    console.log('members: ', members)
     if (members[0] == socket.user.id) {
       users[members[1]].emit('receive-message', {
         userId: msg.userId,
@@ -110,7 +99,6 @@ io.on('connection', async (socket) => {
 
   // 收到 send-message-to-friend 後轉發
   socket.on('send-message-to-friend', (data) => {
-    console.log('send-message-to-friend: ', data)
     const { roomId, message } = data
 
     // 寫進資料庫
@@ -126,8 +114,6 @@ io.on('connection', async (socket) => {
 
   // client 端點擊 repliers 發送 create room 事件後
   socket.on('create-room', async (data) => {
-    console.log('data: ', data)
-    // data: {'counterpart': 2, questionId: 52}
     // 如果前端選的 user 目前不在線上，則不能建立聊天室
     if (!users[data.counterpart]) {
       socket.emit('create-room-fail', {
@@ -195,6 +181,9 @@ io.on('connection', async (socket) => {
     socket.emit('match-end-time', matchEndTime)
     users[counterpart].emit('match-end-time', matchEndTime)
 
+    // 通知發問題的人: 被選者已加入
+    users[counterpart].emit('counterpart-has-joined')
+
     // 15 分鐘後結束聊天室
     setTimeout(() => {
       socket.emit('match-time-end')
@@ -212,27 +201,19 @@ io.on('connection', async (socket) => {
 
   // client 端點擊好友發送 join-room 事件
   socket.on('join-room', async (data) => {
-    console.log('receive join-room event...')
-    console.log('data: ', data)
-    console.log('socket.user: ', socket.user)
-    console.log('socket rooms before: ', socket.rooms)
     const { roomId } = data
     // 從 jwt 拿到 userid & 從前端拿到 roomid之後，確認此 user 有沒有權限加入 room
     const canJoinRoom = await Chatroom.checkUserAuth(socket.user.id, roomId)
 
-    console.log(`user: ${socket.user.id} wants to join room ${roomId}`)
-    console.log('can join room: ', canJoinRoom)
     if (!canJoinRoom) {
       socket.emit('join-room-fail', {
         message: `not authorized to join room ${roomId}`,
       })
-      console.log(`cannot join`)
       return
     }
 
     // JOIN 另外一個 room 之前要先離開其他 rooms (但要保留自己的 socket.id 的那個 room)
     const currentRooms = Array.from(socket.rooms)
-    console.log(currentRooms)
 
     const filteredRooms = currentRooms.filter((room) => room !== socket.id)
     filteredRooms.forEach((room) => {
@@ -240,7 +221,6 @@ io.on('connection', async (socket) => {
     })
 
     socket.join(roomId)
-    console.log('socket rooms after: ', socket.rooms)
   })
 
   // client 發送 agree-to-be-friends 事件
@@ -266,17 +246,13 @@ io.on('connection', async (socket) => {
 
   // 加入 dashboard 事件
   socket.on('join-recent-matches-notify-room', () => {
-    console.log('received join-recent-matches-notify-room event.....')
     const currentRooms = Array.from(socket.rooms)
-    console.log(currentRooms)
     socket.leaveAll()
     socket.join('recent-matches-notify-room')
-    console.log(Array.from(socket.rooms))
   })
 
   // refresh dashboard event
   socket.on('refresh-dashboard', async () => {
-    // TODO: 權限管理: 管理員腳色才能收到回覆
     // 收到前端請求後，從 model 拿資料並回傳
     const askedQuestionCount = await Admin.getAskedQuestionCount()
     const openQuestionCount = await Admin.getOpenQuestionCount()
