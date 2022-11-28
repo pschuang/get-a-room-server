@@ -21,7 +21,7 @@ const Chatroom = require('./models/chatroom_model')
 const Questions = require('./models/questions_model')
 const Friends = require('./models/friends_model')
 const Admin = require('./models/admin_model')
-const EXPIRE_TIME = 24 * 60 * 1000 // match 和 room 的 redis key expire 時間先設定 30 秒 之後要改成 24 hr
+const EXPIRE_TIME = 30 // match 和 room 的 redis key expire 時間先設定 30 秒 之後要改成 24 hr
 
 const io = new Server(server, {
   cors: {
