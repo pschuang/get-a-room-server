@@ -45,7 +45,6 @@ io.use((socket, next) => {
 })
 
 io.on('connection', async (socket) => {
-
   // 紀錄 user 的 socket
   users[socket.user.id] = socket
   console.log('users on connection:', Object.keys(users))
@@ -56,11 +55,24 @@ io.on('connection', async (socket) => {
 
   // ======== EVENTS ========= //
   // disconnect
-  socket.on('disconnect', () => {
+  socket.on('disconnect', async () => {
     countOfClinents--
     console.log('someone disconnected, now connection count: ', countOfClinents)
-    delete users[socket.user.id]
     io.emit('online-count', countOfClinents)
+
+    // 如果有在即時聊天室，通知對方已離線
+    const roomId = await redis.get('user:' + socket.user.id)
+
+    if (roomId) {
+      const result = await redis.hget('room:' + roomId, 'members')
+
+      const members = JSON.parse(result)
+      const counterpart = members.filter((user) => user != socket.user.id)
+      console.log('counterpart: ', counterpart)
+      if (users[counterpart])
+        users[counterpart].emit('counterpart-left-chatroom')
+    }
+    delete users[socket.user.id]
   })
 
   // 收到訊息後轉發同個聊天室
@@ -145,11 +157,17 @@ io.on('connection', async (socket) => {
     }
 
     await redis.hmset('room:' + roomId, roomData)
-    await redis.expire('room:' + roomId, EXPIRE_TIME) // 設定
+    await redis.expire('room:' + roomId, EXPIRE_TIME)
 
     // 紀錄已配對成功的人
     await redis.lpush('match-list', [socket.user.id, data.counterpart])
-    await redis.expire('match-list', EXPIRE_TIME) // 設定
+    await redis.expire('match-list', EXPIRE_TIME)
+
+    // 紀錄使用者的聊天室 room_id，以便離線的時候可以通知另一方
+    await redis.set('user:' + socket.user.id, roomId)
+    await redis.set('user:' + data.counterpart, roomId)
+    await redis.expire('user:' + socket.user.id, EXPIRE_TIME)
+    await redis.expire('user:' + data.counterpart, EXPIRE_TIME)
 
     socket.emit('create-room-ok', { roomId, counterpart: data.counterpart }) // 回傳給自己 roomId 以及聊天對象 id
 
@@ -186,8 +204,10 @@ io.on('connection', async (socket) => {
 
     // 15 分鐘後結束聊天室
     setTimeout(() => {
-      socket.emit('match-time-end')
-      users[counterpart].emit('match-time-end')
+      socket.emit('match-time-end', { DECIDE_TO_BE_FRIEND_TIME_SPAN })
+      users[counterpart].emit('match-time-end', {
+        DECIDE_TO_BE_FRIEND_TIME_SPAN,
+      })
       // 結束聊天後，1 分鐘後再檢查
       setTimeout(async () => {
         const lengthOfAgreeList = await redis.llen(roomId)
