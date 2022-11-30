@@ -4,14 +4,32 @@ const User = require('../models/user_model')
 
 const signUp = async (req, res) => {
   // 收到使用者註冊資訊
-  const { name, nickname, email, password, picture_id } = req.body
-  if (!name || !nickname || !email || !password || !picture_id) {
+  const { name, nickname, email, password, confirm_password, picture_id } =
+    req.body
+  if (
+    !name ||
+    !nickname ||
+    !email ||
+    !password ||
+    !confirm_password ||
+    !picture_id
+  ) {
     res.status(400).send({ error: 'All fields for sign up are required.' })
     return
   }
 
   if (!validator.isEmail(email)) {
     res.status(400).send({ error: 'Invalid email format' })
+    return
+  }
+
+  if (password !== confirm_password) {
+    res.status(400).send({ error: 'Passwords are not matching' })
+    return
+  }
+
+  if (!validator.isStrongPassword(password)) {
+    res.status(400).send({ error: 'Please use stronger password' })
     return
   }
 
