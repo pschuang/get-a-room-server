@@ -99,7 +99,7 @@ const signOut = async () => {
 
 const getUserInfo = async (userId) => {
   const [user] = await db.query(
-    'SELECT user.id, user.nickname,  picture.picture_URL FROM user, picture WHERE user.picture_id = picture.id AND user.id = ?',
+    'SELECT user.id, user.nickname, user.role,  picture.picture_URL FROM user, picture WHERE user.picture_id = picture.id AND user.id = ?',
     [userId]
   )
   return user[0]

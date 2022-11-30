@@ -104,6 +104,14 @@ const createReply = async (req, res) => {
   if (!user_id || !question_id || !reply) {
     return res.status(400).json({ message: 'reply detail insufficient' })
   }
+
+  // 判斷是否為回答自己的問題
+  const isOwnQuestion = await Questions.checkIsOwnQuestion(question_id, user_id)
+  if (isOwnQuestion)
+    return res
+      .status(400)
+      .json({ message: 'not allow to reply your own question!' })
+
   await Questions.createReply(user_id, question_id, reply)
   res.json({ message: 'created reply successfully!' })
 }

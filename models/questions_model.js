@@ -169,6 +169,15 @@ const closeQuestion = async (questionId) => {
   ])
 }
 
+const checkIsOwnQuestion = async (questionId, userId) => {
+  const [result] = await db.query(
+    'SELECT * FROM questions WHERE id = ? AND user_id = ?',
+    [questionId, userId]
+  )
+
+  return result.length
+}
+
 module.exports = {
   getQuestionsDetails,
   getQuestions,
@@ -177,4 +186,5 @@ module.exports = {
   createQuestion,
   createReply,
   closeQuestion,
+  checkIsOwnQuestion,
 }
