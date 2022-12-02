@@ -32,6 +32,7 @@ const updatePageView = async () => {
     ])
     await redis.del('page-view-list')
   }
+  await redis.disconnect()
 }
 
 updatePageView()

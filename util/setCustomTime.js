@@ -17,6 +17,7 @@ const setBulletinOpenTime = async () => {
     .format('YYYY-MM-DD HH:mm:ss')
 
   await redis.set(keyForDatetime, valueForDatetime)
+  await redis.disconnect()
 }
 
 setBulletinOpenTime()

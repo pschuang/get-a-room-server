@@ -20,6 +20,7 @@ const generateBulletinOpenTime = async () => {
 
   await redis.set(keyForDatetime, valueForDatetime)
   console.log(`generated time at ${dayjs().format('YYYY-MM-DD HH:mm:ss')}`)
+  await redis.disconnect()
 }
 
 generateBulletinOpenTime()
