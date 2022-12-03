@@ -8,6 +8,7 @@ const {
   checkStatus,
   createQuestion,
   createReply,
+  getReplies,
 } = require('../controllers/questions_controller')
 
 router
@@ -25,5 +26,7 @@ router
 router
   .route('/reply')
   .post(authentication, isBulletinOpen, wrapAsync(createReply))
+
+router.route('/reply/:questionId').get(isBulletinOpen, wrapAsync(getReplies))
 
 module.exports = router

@@ -1,5 +1,4 @@
 require('dotenv').config
-const e = require('express')
 const Questions = require('../models/questions_model')
 
 const getQuestions = async (req, res) => {
@@ -92,6 +91,12 @@ const createQuestion = async (req, res) => {
     return res.status(400).json({ message: 'question detail insufficient' })
   }
 
+  if (content.length > 150) {
+    return res
+      .status(400)
+      .json({ message: 'Question content word limit: 150 words.' })
+  }
+
   //TODO: 要確認這個 user 該時段是否已經發布過問題
 
   await Questions.createQuestion(user_id, category_id, content)
@@ -105,6 +110,12 @@ const createReply = async (req, res) => {
     return res.status(400).json({ message: 'reply detail insufficient' })
   }
 
+  if (reply.length > 150) {
+    return res
+      .status(400)
+      .json({ message: 'Question content word limit: 150 words.' })
+  }
+
   // 判斷是否為回答自己的問題
   const isOwnQuestion = await Questions.checkIsOwnQuestion(question_id, user_id)
   if (isOwnQuestion)
@@ -116,10 +127,21 @@ const createReply = async (req, res) => {
   res.json({ message: 'created reply successfully!' })
 }
 
+const getReplies = async (req, res) => {
+  const { questionId } = req.params
+  if (!questionId) {
+    res.status(400).json({ message: 'Please provide question id!' })
+    return
+  }
+  const replies = await Questions.getReplies(questionId)
+  res.json({ replies })
+}
+
 module.exports = {
   getQuestions,
   getQuestionsDetails,
   checkStatus,
   createQuestion,
   createReply,
+  getReplies,
 }

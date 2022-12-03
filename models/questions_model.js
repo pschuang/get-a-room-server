@@ -178,6 +178,22 @@ const checkIsOwnQuestion = async (questionId, userId) => {
   return result.length
 }
 
+const getReplies = async (questionId) => {
+  const [replies] = await db.query(
+    `SELECT replies.reply AS answer, user.nickname, picture.picture_URL AS pictureURL
+      FROM questions
+      RIGHT JOIN replies 
+      ON questions.id = replies.question_id
+      JOIN user
+      ON user.id = replies.user_id
+      JOIN picture
+      ON user.picture_id = picture.id
+      WHERE questions.id = ?`,
+    [questionId]
+  )
+  return replies
+}
+
 module.exports = {
   getQuestionsDetails,
   getQuestions,
@@ -187,4 +203,5 @@ module.exports = {
   createReply,
   closeQuestion,
   checkIsOwnQuestion,
+  getReplies,
 }
