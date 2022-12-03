@@ -31,7 +31,7 @@ const io = new Server(server, {
 })
 
 let users = {}
-let countOfClinents = 0
+let countOfClients = 0
 io.use((socket, next) => {
   try {
     const user = jwt.verify(socket.handshake.auth.token, TOKEN_SECRET)
@@ -44,21 +44,75 @@ io.use((socket, next) => {
   }
 })
 
+const getOnlineFriendList = async (userId, onlineUsers) => {
+  const friends = await Friends.getFriends(userId)
+  const onlineFriends = friends
+    .map((friend) => friend?.userId)
+    .filter((friendId) => onlineUsers.includes(friendId.toString()))
+
+  return onlineFriends
+}
+
 io.on('connection', async (socket) => {
   // 紀錄 user 的 socket
   users[socket.user.id] = socket
-  console.log('users on connection:', Object.keys(users))
+  console.log('online users:', Object.keys(users))
+
+  // 將所有在線上的好友的 user id 回傳
+  const onlineFriendList = await getOnlineFriendList(
+    socket.user.id,
+    Object.keys(users)
+  )
+
+  // 上線時，回傳給在線好友他們的在線好友
+  if (onlineFriendList.length != 0) {
+    onlineFriendList.forEach(async (onlineFriend) => {
+      const onlineFriendIds = await getOnlineFriendList(
+        onlineFriend,
+        Object.keys(users)
+      )
+      users[onlineFriend].emit('a-friend-connect', onlineFriendIds)
+    })
+  }
 
   // count the current connections
-  countOfClinents++
-  io.emit('online-count', countOfClinents)
+  countOfClients++
+  io.emit('online-count', countOfClients)
 
   // ======== EVENTS ========= //
+
+  // 上線時，回傳給自己 自己的在線好友
+  socket.on('get-online-friends', async () => {
+    const onlineFriendList = await getOnlineFriendList(
+      socket.user.id,
+      Object.keys(users)
+    )
+    socket.emit('online-friends', onlineFriendList)
+  })
+
   // disconnect
   socket.on('disconnect', async () => {
-    countOfClinents--
-    console.log('someone disconnected, now connection count: ', countOfClinents)
-    io.emit('online-count', countOfClinents)
+    // dashboard 連線數量-1
+    countOfClients--
+    console.log('someone disconnected, now connection count: ', countOfClients)
+    io.emit('online-count', countOfClients)
+
+    // 離線時，回傳給在線好友他們的在線好友 (除了自己)
+    if (onlineFriendList.length != 0) {
+      onlineFriendList.forEach(async (onlineFriend) => {
+        const onlineFriendIds = await getOnlineFriendList(
+          onlineFriend,
+          Object.keys(users)
+        )
+        const onlineFriendIdsWithOutMe = onlineFriendIds.filter(
+          (onlineFriendId) => onlineFriendId != socket.user.id
+        )
+        users[onlineFriend]?.emit(
+          'a-friend-disconnect',
+          onlineFriendIdsWithOutMe
+        )
+      })
+    }
 
     // 如果有在即時聊天室，通知對方已離線
     const roomId = await redis.get('user:' + socket.user.id)
@@ -68,7 +122,6 @@ io.on('connection', async (socket) => {
 
       const members = JSON.parse(result)
       const counterpart = members.filter((user) => user != socket.user.id)
-      console.log('counterpart: ', counterpart)
       if (users[counterpart])
         users[counterpart].emit('counterpart-left-chatroom')
     }
