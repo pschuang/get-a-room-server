@@ -31,7 +31,7 @@ const io = new Server(server, {
 })
 
 let users = {}
-let countOfClients = 0
+// let countOfClients = 0
 io.use((socket, next) => {
   try {
     const user = jwt.verify(socket.handshake.auth.token, TOKEN_SECRET)
@@ -76,10 +76,14 @@ io.on('connection', async (socket) => {
   }
 
   // count the current connections
-  countOfClients++
-  io.emit('online-count', countOfClients)
+  // countOfClients++
+  io.emit('online-count', Object.keys(users).length)
 
   // ======== EVENTS ========= //
+  // 進入 dashboard 之後取得在線人數
+  socket.on('get-online-count', () => {
+    socket.emit('online-count', Object.keys(users).length)
+  })
 
   // 上線時，回傳給自己 自己的在線好友
   socket.on('get-online-friends', async () => {
@@ -93,9 +97,8 @@ io.on('connection', async (socket) => {
   // disconnect
   socket.on('disconnect', async () => {
     // dashboard 連線數量-1
-    countOfClients--
-    console.log('someone disconnected, now connection count: ', countOfClients)
-    io.emit('online-count', countOfClients)
+    // countOfClients--
+    io.emit('online-count', Object.keys(users).length)
 
     // 離線時，回傳給在線好友他們的在線好友 (除了自己)
     if (onlineFriendList.length != 0) {
@@ -341,6 +344,13 @@ io.on('connection', async (socket) => {
       friendshipCount,
       replyCount,
     })
+  })
+
+  // 接到新回覆，通知問問題的人
+  socket.on('create-reply', ({ questionOwnerId }) => {
+    if (users[questionOwnerId]) {
+      users[questionOwnerId].emit('new-reply')
+    }
   })
 
   // 紀錄 page views => 在 redis 紀錄
