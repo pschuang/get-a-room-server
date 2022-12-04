@@ -31,7 +31,7 @@ const io = new Server(server, {
 })
 
 let users = {}
-// let countOfClients = 0
+let countOfClients = 0
 io.use((socket, next) => {
   try {
     const user = jwt.verify(socket.handshake.auth.token, TOKEN_SECRET)
@@ -51,6 +51,19 @@ const getOnlineFriendList = async (userId, onlineUsers) => {
     .filter((friendId) => onlineUsers.includes(friendId.toString()))
 
   return onlineFriends
+}
+
+const getRecentMatches = async () => {
+  let matches = []
+  const rooms = await redis.keys('room:*')
+
+  for (const key of rooms) {
+    const members = await redis.hget(key, 'members')
+    const time = await redis.hget(key, 'created_dt')
+    matches.push({ users: JSON.parse(members), time })
+  }
+
+  return matches
 }
 
 io.on('connection', async (socket) => {
@@ -76,13 +89,18 @@ io.on('connection', async (socket) => {
   }
 
   // count the current connections
-  // countOfClients++
-  io.emit('online-count', Object.keys(users).length)
+  countOfClients++
+  io.emit('online-count', { onlineCounts: countOfClients })
 
   // ======== EVENTS ========= //
   // 進入 dashboard 之後取得在線人數
-  socket.on('get-online-count', () => {
-    socket.emit('online-count', Object.keys(users).length)
+  socket.on('get-online-count', async () => {
+    const matches = await getRecentMatches()
+
+    socket.emit('online-count', {
+      onlineCounts: countOfClients,
+      recentMatches: matches,
+    })
   })
 
   // 上線時，回傳給自己 自己的在線好友
@@ -97,8 +115,8 @@ io.on('connection', async (socket) => {
   // disconnect
   socket.on('disconnect', async () => {
     // dashboard 連線數量-1
-    // countOfClients--
-    io.emit('online-count', Object.keys(users).length)
+    countOfClients--
+    io.emit('online-count', { onlineCounts: countOfClients })
 
     // 離線時，回傳給在線好友他們的在線好友 (除了自己)
     if (onlineFriendList.length != 0) {
@@ -124,7 +142,7 @@ io.on('connection', async (socket) => {
       const result = await redis.hget('room:' + roomId, 'members')
 
       const members = JSON.parse(result)
-      const counterpart = members.filter((user) => user != socket.user.id)
+      const counterpart = members?.filter((user) => user != socket.user.id)
       if (users[counterpart])
         users[counterpart].emit('counterpart-left-chatroom')
     }
