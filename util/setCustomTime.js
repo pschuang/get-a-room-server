@@ -27,7 +27,7 @@ const setBulletinOpenTime = async () => {
   // 更新問題發問時間
   await db.query('UPDATE questions SET start_time = ? WHERE id IN (?)', [
     valueForQuestionDatetime,
-    [10, 11, 12, 13, 14, 16, 33, 34, 35],
+    [118, 119, 120, 121, 122, 123, 124, 125, 126, 127],
   ])
   await redis.disconnect()
   await db.end()
