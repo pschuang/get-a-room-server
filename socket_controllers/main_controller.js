@@ -1,5 +1,4 @@
 require('dotenv').config({ path: '../.env' })
-const redis = require('../util/cache')
 const Chatroom = require('../models/chatroom_model')
 const Friends = require('../models/friends_model')
 const Questions = require('../models/questions_model')
@@ -14,6 +13,8 @@ const {
 } = require('../util/convertDatetime')
 const { MATCH_CHATROOM_TIME_SPAN, DECIDE_TO_BE_FRIEND_TIME_SPAN } = process.env
 const getOnlineFriendList = require('../service/onlineFriends')
+
+const Cache = require('../models/cache_model')
 
 const getOnlineFriends = async (socket, users) => {
   const onlineFriendList = await getOnlineFriendList(
@@ -65,10 +66,10 @@ const disconnectNotifyFriends = async (socket, users) => {
 
 const notifyCounterpartLeft = async (socket, users) => {
   // 如果有在即時聊天室，通知對方已離線
-  const roomId = await redis.get('user:' + socket.user.id)
+  const roomId = await Cache.getRoomId(socket.user.id)
 
   if (roomId) {
-    const result = await redis.hget('room:' + roomId, 'members')
+    const result = await Cache.getMembers(roomId)
 
     const members = JSON.parse(result)
     const counterpart = members?.filter((user) => user != socket.user.id)
@@ -84,7 +85,7 @@ const sendMessage = async (socket, users, msg) => {
   }
 
   // 1. 自己管 room
-  const result = await redis.hget('room:' + msg.roomId, 'members')
+  const result = await Cache.getMembers(msg.roomId)
 
   const members = JSON.parse(result)
   if (!members) {
@@ -133,7 +134,7 @@ const createRoom = async (socket, users, data) => {
   }
 
   // 判斷選擇的人是不是已經配對過
-  const matchList = await redis.lrange('match-list', 0, -1)
+  const matchList = await Cache.getMatchList()
   if (matchList.includes(data.counterpart.toString())) {
     socket.emit('create-room-fail', {
       message: `user ${data.counterpart} has been matched.`,
@@ -141,12 +142,8 @@ const createRoom = async (socket, users, data) => {
     return
   }
 
-  // 1. 自己管理 room
+  // 自己管理 room
   let roomId = uuidv4()
-  // {1234: {
-  //   "members" : [1, 2],
-  //   'created_at' : '2022/11/4 13:30'
-  // }
 
   // 紀錄配對聊天室 roomId, 雙方 user_id, 開始聊天時間
   const roomData = {
@@ -154,18 +151,14 @@ const createRoom = async (socket, users, data) => {
     created_dt: currentUTCDateTime(),
   }
 
-  await redis.hmset('room:' + roomId, roomData)
-  await redis.expire('room:' + roomId, EXPIRE_TIME)
+  Cache.setMatchChatRoomInfo(roomId, roomData, EXPIRE_TIME)
 
   // 紀錄已配對成功的人
-  await redis.lpush('match-list', [socket.user.id, data.counterpart])
-  await redis.expire('match-list', EXPIRE_TIME)
+  Cache.addUsersToMatchList(socket.user.id, data.counterpart, EXPIRE_TIME)
 
   // 紀錄使用者的聊天室 room_id，以便離線的時候可以通知另一方
-  await redis.set('user:' + socket.user.id, roomId)
-  await redis.set('user:' + data.counterpart, roomId)
-  await redis.expire('user:' + socket.user.id, EXPIRE_TIME)
-  await redis.expire('user:' + data.counterpart, EXPIRE_TIME)
+  Cache.setUserWithRoomId(socket.user.id, roomId, EXPIRE_TIME)
+  Cache.setUserWithRoomId(data.counterpart, roomId, EXPIRE_TIME)
 
   socket.emit('create-room-ok', { roomId, counterpart: data.counterpart }) // 回傳給自己 roomId 以及聊天對象 id
 
@@ -207,7 +200,7 @@ const startMatchChatRoom = async (socket, users, roomId, counterpart) => {
     })
     // 結束聊天後，1 分鐘後再檢查
     setTimeout(async () => {
-      const lengthOfAgreeList = await redis.llen(roomId)
+      const lengthOfAgreeList = await Cache.getLengthOfAgreeList(roomId)
       if (lengthOfAgreeList < 2) {
         socket.emit('be-friends-fail')
         users[counterpart].emit('be-friends-fail')
@@ -241,15 +234,14 @@ const joinRoom = async (socket, data) => {
 
 const makeFriends = async (users, roomId, userId) => {
   // 在 redis 紀錄
-  const lengthOfAgreeList = await redis.llen(roomId)
+  const lengthOfAgreeList = await Cache.getLengthOfAgreeList(roomId)
   if (lengthOfAgreeList === 0) {
-    await redis.lpush(roomId, userId)
-    await redis.expire(roomId, EXPIRE_TIME)
+    Cache.addUserToAgreeList(roomId, userId, EXPIRE_TIME)
   }
   if (lengthOfAgreeList === 1) {
-    await redis.lpush(roomId, userId)
+    Cache.addUserToAgreeList(roomId, userId, EXPIRE_TIME)
     // 找到聊天對象 user_id
-    const result = await redis.hget('room:' + roomId, 'members')
+    const result = await Cache.getMembers(roomId)
     const members = JSON.parse(result)
     await Friends.createFriendship(roomId, members)
     // 通知雙方已成為好友

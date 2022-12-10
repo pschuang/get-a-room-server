@@ -5,11 +5,11 @@ const {
   DECIDE_TO_BE_FRIEND_TIME_SPAN,
 } = process.env
 const db = require('./mysqlconf')
-const redis = require('../util/cache')
+const Cache = require('./cache_model')
 const { currentUTCDate, addTimeByMinute } = require('../util/convertDatetime')
 
 const getAskedQuestionCount = async () => {
-  const openTimeTodayUTC = await redis.get(currentUTCDate())
+  const openTimeTodayUTC = await Cache.getOpenTimeTodayUTC()
 
   const closeTimeTodayUTC = addTimeByMinute(
     openTimeTodayUTC,
@@ -29,7 +29,7 @@ const getAskedQuestionCount = async () => {
 }
 
 const getOpenQuestionCount = async () => {
-  const openTimeTodayUTC = await redis.get(currentUTCDate())
+  const openTimeTodayUTC = await Cache.getOpenTimeTodayUTC()
   const closeTimeTodayUTC = addTimeByMinute(
     openTimeTodayUTC,
     BULLETIN_OPEN_TIME_SPAN
@@ -49,7 +49,7 @@ const getOpenQuestionCount = async () => {
 }
 
 const getQuestionsCountByCategory = async () => {
-  const openTimeTodayUTC = await redis.get(currentUTCDate())
+  const openTimeTodayUTC = await Cache.getOpenTimeTodayUTC()
   const closeTimeTodayUTC = addTimeByMinute(
     openTimeTodayUTC,
     BULLETIN_OPEN_TIME_SPAN
@@ -68,7 +68,7 @@ const getQuestionsCountByCategory = async () => {
 }
 
 const getUserCount = async () => {
-  const openTimeTodayUTC = await redis.get(currentUTCDate())
+  const openTimeTodayUTC = await Cache.getOpenTimeTodayUTC()
   const closeTimeTodayUTC = addTimeByMinute(
     openTimeTodayUTC,
     BULLETIN_OPEN_TIME_SPAN
@@ -87,7 +87,7 @@ const getUserCount = async () => {
 }
 
 const getFriendshipCount = async () => {
-  const openTimeTodayUTC = await redis.get(currentUTCDate())
+  const openTimeTodayUTC = await Cache.getOpenTimeTodayUTC()
 
   const closeTimeTodayUTC = addTimeByMinute(
     openTimeTodayUTC,
@@ -120,7 +120,7 @@ const getQuestionsInAWeek = async () => {
 
 const getReplyCount = async () => {
   try {
-    const openTimeTodayUTC = await redis.get(currentUTCDate())
+    const openTimeTodayUTC = await Cache.getOpenTimeTodayUTC()
     const closeTimeTodayUTC = addTimeByMinute(
       openTimeTodayUTC,
       BULLETIN_OPEN_TIME_SPAN

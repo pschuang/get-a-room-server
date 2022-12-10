@@ -1,12 +1,13 @@
-const redis = require('../util/cache')
+const Cache = require('../models/cache_model')
 
 const getRecentMatches = async () => {
   let matches = []
-  const rooms = await redis.keys('room:*') // 找出所有 'room:' 開頭的 keys
+  const roomIdList = await Cache.getKeyListByPattern('room:*') // 找出所有 'room:' 開頭的 keys
+  const newRoomList = roomIdList.map((roomId) => roomId.slice(5))
 
-  for (const key of rooms) {
-    const members = await redis.hget(key, 'members')
-    const time = await redis.hget(key, 'created_dt')
+  for (const roomId of newRoomList) {
+    const members = await Cache.getMembers(roomId)
+    const time = await Cache.getCreatedDt(roomId)
     matches.push({ users: JSON.parse(members), time })
   }
 

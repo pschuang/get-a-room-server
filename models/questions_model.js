@@ -1,12 +1,11 @@
 const db = require('./mysqlconf')
 const { BULLETIN_OPEN_TIME_SPAN } = process.env
-// const dayjs = require('dayjs')
-const redis = require('../util/cache')
 const {
   currentUTCDateTime,
-  currentUTCDate,
   addTimeByMinute,
 } = require('../util/convertDatetime')
+
+const Cache = require('../models/cache_model')
 
 const getQuestionsDetails = async (questionId) => {
   const [details] = await db.execute(
@@ -65,7 +64,7 @@ const getQuestionsDetails = async (questionId) => {
 
 const getQuestions = async (paging, questionsPerPage, requirements = {}) => {
   // 只撈布告欄開放時間內建立的問題
-  const openTimeTodayUTC = await redis.get(currentUTCDate())
+  const openTimeTodayUTC = await Cache.getOpenTimeTodayUTC()
   const closeTimeTodayUTC = addTimeByMinute(
     openTimeTodayUTC,
     BULLETIN_OPEN_TIME_SPAN
@@ -123,7 +122,7 @@ const getQuestions = async (paging, questionsPerPage, requirements = {}) => {
 
 const checkStatus = async (userId) => {
   // 加上時間判斷
-  const openTimeTodayUTC = await redis.get(currentUTCDate())
+  const openTimeTodayUTC = await Cache.getOpenTimeTodayUTC()
   const closeTimeTodayUTC = addTimeByMinute(
     openTimeTodayUTC,
     BULLETIN_OPEN_TIME_SPAN

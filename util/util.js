@@ -1,14 +1,14 @@
 require('dotenv').config()
 const { TOKEN_SECRET, BULLETIN_OPEN_TIME_SPAN } = process.env
-const redis = require('./cache')
 const jwt = require('jsonwebtoken')
 const {
   currentUTCDateTime,
-  currentUTCDate,
   addTimeByMinute,
   addTimeByDay,
   isTimeBetween,
 } = require('./convertDatetime')
+
+const Cache = require('../models/cache_model')
 
 const role = {
   ADMIN: 1,
@@ -55,27 +55,23 @@ const authorization = async (req, res, next) => {
 }
 
 const isBulletinOpen = async (req, res, next) => {
-  const openTimeTodayUTC = await redis.get(currentUTCDate())
-  const TomorrowUTC = addTimeByDay(openTimeTodayUTC, 1)
+  const openTimeTodayUTC = await Cache.getOpenTimeTodayUTC()
+  const tomorrowUTC = addTimeByDay(openTimeTodayUTC, 1)
 
   // 布告欄下一個開啟時間
-  const nextOpenAt = await redis.get(TomorrowUTC)
+  const nextOpenAt = await Cache.getValue(tomorrowUTC)
 
   const closeTimeTodayUTC = addTimeByMinute(
     openTimeTodayUTC,
     BULLETIN_OPEN_TIME_SPAN
   )
 
-  console.log(currentUTCDateTime())
-  console.log(openTimeTodayUTC)
-  console.log(closeTimeTodayUTC)
   // 判斷是否在區間
   const canGetIn = isTimeBetween(
     currentUTCDateTime(),
     openTimeTodayUTC,
     closeTimeTodayUTC
   )
-  console.log(canGetIn)
 
   // 布告欄如果在開啟時間內，要帶 bullertinCloseTime 給 common controller 回傳給前端
   req.bulletinCloseTime = closeTimeTodayUTC

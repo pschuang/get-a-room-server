@@ -17,13 +17,14 @@ const {
   refreshDashboard,
 } = require('./socket_controllers/admin_controller')
 
+const Cache = require('./models/cache_model')
+
 const http = require('http')
 const { Server } = require('socket.io')
 const app = require('./app')
 const server = http.createServer(app)
 
 const { PORT, TOKEN_SECRET } = process.env
-const redis = require('./util/cache')
 const jwt = require('jsonwebtoken')
 
 const io = new Server(server, {
@@ -130,7 +131,7 @@ io.on('connection', async (socket) => {
   })
 
   // 紀錄 page views => 在 redis 紀錄
-  await redis.lpush('page-view-list', socket.user.id)
+  Cache.addPageView(socket.user.id)
 })
 
 server.listen(PORT, () => {
