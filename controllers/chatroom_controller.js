@@ -1,7 +1,7 @@
 require('dotenv').config
-const redis = require('../util/cache')
 const Chatroom = require('../models/chatroom_model')
 const User = require('../models/user_model')
+const Cache = require('../models/cache_model')
 
 const getMessages = async (req, res) => {
   const { roomId } = req.params
@@ -16,7 +16,7 @@ const getMatchCounterPartInfo = async (req, res) => {
   const { roomId } = req.params
   const userId = req.user.id
   // 去 redis 拿 counterpart
-  const result = await redis.hget('room:' + roomId, 'members')
+  const result = await Cache.getMembers(roomId)
   const members = JSON.parse(result)
   const counterpartId = members.find((id) => id != userId)
 

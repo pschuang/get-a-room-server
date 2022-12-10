@@ -13,11 +13,11 @@ const updatePageView = async () => {
   console.log(pageViewsCount)
 
   // 寫進 DB
-  const [today] = await db.query('SELECT * FROM page_views WHERE time = ?', [
+  const [today] = await db.execute('SELECT * FROM page_views WHERE time = ?', [
     todayDateUTC,
   ])
   if (today.length === 0) {
-    await db.query('INSERT INTO page_views (views, time) VALUES( ? , ?)', [
+    await db.execute('INSERT INTO page_views (views, time) VALUES( ? , ?)', [
       pageViewsCount,
       todayDateUTC,
     ])
@@ -26,7 +26,7 @@ const updatePageView = async () => {
   } else {
     console.log('record for today exists...')
     const newPageViews = today[0].views + pageViewsCount
-    await db.query('UPDATE page_views SET views = ? WHERE time = ?', [
+    await db.execute('UPDATE page_views SET views = ? WHERE time = ?', [
       newPageViews,
       todayDateUTC,
     ])

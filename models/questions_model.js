@@ -1,10 +1,14 @@
 const db = require('./mysqlconf')
 const { BULLETIN_OPEN_TIME_SPAN } = process.env
-const dayjs = require('dayjs')
-const redis = require('../util/cache')
+const {
+  currentUTCDateTime,
+  addTimeByMinute,
+} = require('../util/convertDatetime')
+
+const Cache = require('../models/cache_model')
 
 const getQuestionsDetails = async (questionId) => {
-  const [details] = await db.query(
+  const [details] = await db.execute(
     `SELECT questions.user_id, questions.content, questions.is_closed, replies.user_id AS userId, replies.reply AS answer, user.nickname, picture.picture_URL AS pictureURL
     FROM questions
     LEFT JOIN replies 
@@ -39,7 +43,7 @@ const getQuestionsDetails = async (questionId) => {
 
   // 找出該 回答問題的人 與 問問題的人 的 roomId，並在 replier 物件上加上 isFriend, roomId
   for (let i = 0; i < replierUserIds.length; i++) {
-    const [roomId] = await db.query(
+    const [roomId] = await db.execute(
       'SELECT friend_user_id, room_id FROM friends WHERE user_id = ? AND friend_user_id = ?',
       [questionUserId, replierUserIds[i]]
     )
@@ -60,10 +64,12 @@ const getQuestionsDetails = async (questionId) => {
 
 const getQuestions = async (paging, questionsPerPage, requirements = {}) => {
   // 只撈布告欄開放時間內建立的問題
-  const openTimeTodayUTC = await redis.get(dayjs().utc().format('YYYY-MM-DD'))
-  const closeTimeTodayUTC = dayjs(openTimeTodayUTC)
-    .add(BULLETIN_OPEN_TIME_SPAN, 'minute')
-    .format('YYYY-MM-DD HH:mm:ss')
+  const openTimeTodayUTC = await Cache.getOpenTimeTodayUTC()
+  const closeTimeTodayUTC = addTimeByMinute(
+    openTimeTodayUTC,
+    BULLETIN_OPEN_TIME_SPAN
+  )
+
   const condition = {
     sql: '',
     binding: [openTimeTodayUTC, closeTimeTodayUTC],
@@ -86,8 +92,11 @@ const getQuestions = async (paging, questionsPerPage, requirements = {}) => {
   }
 
   const limit = {
-    sql: 'LIMIT ?, ?',
-    binding: [paging * questionsPerPage, questionsPerPage],
+    sql: 'LIMIT ?, ? ',
+    binding: [
+      (paging * questionsPerPage).toString(),
+      questionsPerPage.toString(),
+    ],
   }
 
   const questionQuery =
@@ -103,8 +112,8 @@ const getQuestions = async (paging, questionsPerPage, requirements = {}) => {
 
   const questionCountBindings = condition.binding
 
-  const [questions] = await db.query(questionQuery, questionBindings)
-  const [questionsCount] = await db.query(
+  const [questions] = await db.execute(questionQuery, questionBindings)
+  const [questionsCount] = await db.execute(
     questionCountQuery,
     questionCountBindings
   )
@@ -113,13 +122,13 @@ const getQuestions = async (paging, questionsPerPage, requirements = {}) => {
 
 const checkStatus = async (userId) => {
   // 加上時間判斷
-  const openTimeTodayUTC = await redis.get(dayjs().utc().format('YYYY-MM-DD'))
+  const openTimeTodayUTC = await Cache.getOpenTimeTodayUTC()
+  const closeTimeTodayUTC = addTimeByMinute(
+    openTimeTodayUTC,
+    BULLETIN_OPEN_TIME_SPAN
+  )
 
-  const closeTimeTodayUTC = dayjs(openTimeTodayUTC)
-    .add(BULLETIN_OPEN_TIME_SPAN, 'minute')
-    .format('YYYY-MM-DD HH:mm:ss')
-
-  const [question] = await db.query(
+  const [question] = await db.execute(
     'SELECT questions.*, categories.category, user.id AS user_id, user.nickname, picture.picture_URL AS pictureURL FROM questions, user, categories, picture WHERE questions.user_id = user.id AND questions.category_id = categories.id AND user.picture_id = picture.id AND user_id = ? AND start_time > ? AND start_time < ?',
     [userId, openTimeTodayUTC, closeTimeTodayUTC]
   )
@@ -129,7 +138,7 @@ const checkStatus = async (userId) => {
 }
 
 const getReplyCounts = async (questionId) => {
-  const [data] = await db.query(
+  const [data] = await db.execute(
     `SELECT count(*) AS reply_counts FROM replies WHERE question_id =?`,
     [questionId]
   )
@@ -138,39 +147,35 @@ const getReplyCounts = async (questionId) => {
 }
 
 const createQuestion = async (userId, categoryId, content) => {
-  const currentDateTime = dayjs().utc().format('YYYY-MM-DD HH:mm:ss')
-
   const question = {
     user_id: userId,
     category_id: categoryId,
-    start_time: currentDateTime,
+    start_time: currentUTCDateTime(),
     content: content,
     is_closed: 0,
   }
-  await db.query(`INSERT INTO questions SET?`, question)
+  await db.query(`INSERT INTO questions SET ?`, question)
 }
 
 const createReply = async (userId, questionId, reply) => {
-  const currentDateTime = dayjs().utc().format('YYYY-MM-DD HH:mm:ss')
-
   const replyData = {
     user_id: userId,
     question_id: questionId,
     reply: reply,
-    time: currentDateTime,
+    time: currentUTCDateTime(),
   }
 
   await db.query(`INSERT INTO replies SET ?`, replyData)
 }
 
 const closeQuestion = async (questionId) => {
-  await db.query('UPDATE questions SET is_closed = 1 WHERE id = ?', [
+  await db.execute('UPDATE questions SET is_closed = 1 WHERE id = ?', [
     questionId,
   ])
 }
 
 const checkIsOwnQuestion = async (questionId, userId) => {
-  const [result] = await db.query(
+  const [result] = await db.execute(
     'SELECT * FROM questions WHERE id = ? AND user_id = ?',
     [questionId, userId]
   )
@@ -179,7 +184,7 @@ const checkIsOwnQuestion = async (questionId, userId) => {
 }
 
 const getReplies = async (questionId) => {
-  const [replies] = await db.query(
+  const [replies] = await db.execute(
     `SELECT replies.reply AS answer, user.nickname, picture.picture_URL AS pictureURL
       FROM questions
       RIGHT JOIN replies 

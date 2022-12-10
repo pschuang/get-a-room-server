@@ -5,19 +5,19 @@ const {
   DECIDE_TO_BE_FRIEND_TIME_SPAN,
 } = process.env
 const db = require('./mysqlconf')
-const redis = require('../util/cache')
-const dayjs = require('dayjs')
-var utc = require('dayjs/plugin/utc')
-dayjs.extend(utc)
+const Cache = require('./cache_model')
+const { currentUTCDate, addTimeByMinute } = require('../util/convertDatetime')
 
 const getAskedQuestionCount = async () => {
-  const openTimeTodayUTC = await redis.get(dayjs().utc().format('YYYY-MM-DD'))
+  const openTimeTodayUTC = await Cache.getOpenTimeTodayUTC()
 
-  const closeTimeTodayUTC = dayjs(openTimeTodayUTC)
-    .add(BULLETIN_OPEN_TIME_SPAN, 'minute')
-    .format('YYYY-MM-DD HH:mm:ss')
+  const closeTimeTodayUTC = addTimeByMinute(
+    openTimeTodayUTC,
+    BULLETIN_OPEN_TIME_SPAN
+  )
+
   try {
-    const [result] = await db.query(
+    const [result] = await db.execute(
       'SELECT count(*) AS count FROM questions WHERE start_time > ? AND start_time < ?',
       [openTimeTodayUTC, closeTimeTodayUTC]
     )
@@ -29,12 +29,14 @@ const getAskedQuestionCount = async () => {
 }
 
 const getOpenQuestionCount = async () => {
-  const openTimeTodayUTC = await redis.get(dayjs().utc().format('YYYY-MM-DD'))
-  const closeTimeTodayUTC = dayjs(openTimeTodayUTC)
-    .add(BULLETIN_OPEN_TIME_SPAN, 'minute')
-    .format('YYYY-MM-DD HH:mm:ss')
+  const openTimeTodayUTC = await Cache.getOpenTimeTodayUTC()
+  const closeTimeTodayUTC = addTimeByMinute(
+    openTimeTodayUTC,
+    BULLETIN_OPEN_TIME_SPAN
+  )
+
   try {
-    const [result] = await db.query(
+    const [result] = await db.execute(
       'SELECT count(*) AS count FROM questions WHERE start_time > ? AND start_time < ? AND is_closed = 0',
       [openTimeTodayUTC, closeTimeTodayUTC]
     )
@@ -47,12 +49,14 @@ const getOpenQuestionCount = async () => {
 }
 
 const getQuestionsCountByCategory = async () => {
-  const openTimeTodayUTC = await redis.get(dayjs().utc().format('YYYY-MM-DD'))
-  const closeTimeTodayUTC = dayjs(openTimeTodayUTC)
-    .add(BULLETIN_OPEN_TIME_SPAN, 'minute')
-    .format('YYYY-MM-DD HH:mm:ss')
+  const openTimeTodayUTC = await Cache.getOpenTimeTodayUTC()
+  const closeTimeTodayUTC = addTimeByMinute(
+    openTimeTodayUTC,
+    BULLETIN_OPEN_TIME_SPAN
+  )
+
   try {
-    const [result] = await db.query(
+    const [result] = await db.execute(
       'SELECT count(*) AS count, categories.category FROM questions, categories WHERE questions.category_id = categories.id AND start_time > ? AND start_time < ? GROUP BY category_id;',
       [openTimeTodayUTC, closeTimeTodayUTC]
     )
@@ -64,13 +68,14 @@ const getQuestionsCountByCategory = async () => {
 }
 
 const getUserCount = async () => {
-  const openTimeTodayUTC = await redis.get(dayjs().utc().format('YYYY-MM-DD'))
+  const openTimeTodayUTC = await Cache.getOpenTimeTodayUTC()
+  const closeTimeTodayUTC = addTimeByMinute(
+    openTimeTodayUTC,
+    BULLETIN_OPEN_TIME_SPAN
+  )
 
-  const closeTimeTodayUTC = dayjs(openTimeTodayUTC)
-    .add(BULLETIN_OPEN_TIME_SPAN, 'minute')
-    .format('YYYY-MM-DD HH:mm:ss')
   try {
-    const [result] = await db.query(
+    const [result] = await db.execute(
       'SELECT count(*) AS count From user WHERE created_at > ? AND created_at < ?',
       [openTimeTodayUTC, closeTimeTodayUTC]
     )
@@ -82,18 +87,16 @@ const getUserCount = async () => {
 }
 
 const getFriendshipCount = async () => {
-  const openTimeTodayUTC = await redis.get(dayjs().utc().format('YYYY-MM-DD'))
+  const openTimeTodayUTC = await Cache.getOpenTimeTodayUTC()
 
-  const closeTimeTodayUTC = dayjs(openTimeTodayUTC)
-    .add(
-      BULLETIN_OPEN_TIME_SPAN +
-        MATCH_CHATROOM_TIME_SPAN / 1000 +
-        DECIDE_TO_BE_FRIEND_TIME_SPAN / 1000,
-      'minute'
-    )
-    .format('YYYY-MM-DD HH:mm:ss')
+  const closeTimeTodayUTC = addTimeByMinute(
+    openTimeTodayUTC,
+    BULLETIN_OPEN_TIME_SPAN +
+      MATCH_CHATROOM_TIME_SPAN / 1000 +
+      DECIDE_TO_BE_FRIEND_TIME_SPAN / 1000
+  )
   try {
-    const [result] = await db.query(
+    const [result] = await db.execute(
       'SELECT count(*) AS count FROM friends WHERE created_at > ? AND created_at < ?',
       [openTimeTodayUTC, closeTimeTodayUTC]
     )
@@ -107,8 +110,8 @@ const getFriendshipCount = async () => {
 }
 
 const getQuestionsInAWeek = async () => {
-  const todayUTC = dayjs().utc().format('YYYY-MM-DD')
-  const [result] = await db.query(
+  const todayUTC = currentUTCDate()
+  const [result] = await db.execute(
     `SELECT count(*) AS count, CAST(start_time AS DATE) AS date from questions WHERE CAST(start_time AS DATE) <= ? GROUP BY CAST(start_time AS DATE) ORDER BY CAST(start_time AS DATE) DESC LIMIT 7`,
     [todayUTC]
   )
@@ -117,13 +120,13 @@ const getQuestionsInAWeek = async () => {
 
 const getReplyCount = async () => {
   try {
-    const openTimeTodayUTC = await redis.get(dayjs().utc().format('YYYY-MM-DD'))
+    const openTimeTodayUTC = await Cache.getOpenTimeTodayUTC()
+    const closeTimeTodayUTC = addTimeByMinute(
+      openTimeTodayUTC,
+      BULLETIN_OPEN_TIME_SPAN
+    )
 
-    const closeTimeTodayUTC = dayjs(openTimeTodayUTC)
-      .add(BULLETIN_OPEN_TIME_SPAN, 'minute')
-      .format('YYYY-MM-DD HH:mm:ss')
-
-    const [result] = await db.query(
+    const [result] = await db.execute(
       'SELECT count(*) AS count FROM replies WHERE time > ? AND time < ?',
       [openTimeTodayUTC, closeTimeTodayUTC]
     )
@@ -135,8 +138,8 @@ const getReplyCount = async () => {
 }
 
 const getPageViewsInAWeek = async () => {
-  const todayUTC = dayjs().utc().format('YYYY-MM-DD')
-  const [result] = await db.query(
+  const todayUTC = currentUTCDate()
+  const [result] = await db.execute(
     `SELECT * FROM page_views WHERE time <= ? ORDER BY time DESC LIMIT 7`,
     [todayUTC]
   )
