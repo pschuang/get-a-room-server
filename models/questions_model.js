@@ -1,7 +1,12 @@
 const db = require('./mysqlconf')
 const { BULLETIN_OPEN_TIME_SPAN } = process.env
-const dayjs = require('dayjs')
+// const dayjs = require('dayjs')
 const redis = require('../util/cache')
+const {
+  currentUTCDateTime,
+  currentUTCDate,
+  addTimeByMinute,
+} = require('../util/convertDatetime')
 
 const getQuestionsDetails = async (questionId) => {
   const [details] = await db.query(
@@ -60,10 +65,12 @@ const getQuestionsDetails = async (questionId) => {
 
 const getQuestions = async (paging, questionsPerPage, requirements = {}) => {
   // 只撈布告欄開放時間內建立的問題
-  const openTimeTodayUTC = await redis.get(dayjs().utc().format('YYYY-MM-DD'))
-  const closeTimeTodayUTC = dayjs(openTimeTodayUTC)
-    .add(BULLETIN_OPEN_TIME_SPAN, 'minute')
-    .format('YYYY-MM-DD HH:mm:ss')
+  const openTimeTodayUTC = await redis.get(currentUTCDate())
+  const closeTimeTodayUTC = addTimeByMinute(
+    openTimeTodayUTC,
+    BULLETIN_OPEN_TIME_SPAN
+  )
+
   const condition = {
     sql: '',
     binding: [openTimeTodayUTC, closeTimeTodayUTC],
@@ -113,11 +120,11 @@ const getQuestions = async (paging, questionsPerPage, requirements = {}) => {
 
 const checkStatus = async (userId) => {
   // 加上時間判斷
-  const openTimeTodayUTC = await redis.get(dayjs().utc().format('YYYY-MM-DD'))
-
-  const closeTimeTodayUTC = dayjs(openTimeTodayUTC)
-    .add(BULLETIN_OPEN_TIME_SPAN, 'minute')
-    .format('YYYY-MM-DD HH:mm:ss')
+  const openTimeTodayUTC = await redis.get(currentUTCDate())
+  const closeTimeTodayUTC = addTimeByMinute(
+    openTimeTodayUTC,
+    BULLETIN_OPEN_TIME_SPAN
+  )
 
   const [question] = await db.query(
     'SELECT questions.*, categories.category, user.id AS user_id, user.nickname, picture.picture_URL AS pictureURL FROM questions, user, categories, picture WHERE questions.user_id = user.id AND questions.category_id = categories.id AND user.picture_id = picture.id AND user_id = ? AND start_time > ? AND start_time < ?',
@@ -138,12 +145,10 @@ const getReplyCounts = async (questionId) => {
 }
 
 const createQuestion = async (userId, categoryId, content) => {
-  const currentDateTime = dayjs().utc().format('YYYY-MM-DD HH:mm:ss')
-
   const question = {
     user_id: userId,
     category_id: categoryId,
-    start_time: currentDateTime,
+    start_time: currentUTCDateTime(),
     content: content,
     is_closed: 0,
   }
@@ -151,13 +156,11 @@ const createQuestion = async (userId, categoryId, content) => {
 }
 
 const createReply = async (userId, questionId, reply) => {
-  const currentDateTime = dayjs().utc().format('YYYY-MM-DD HH:mm:ss')
-
   const replyData = {
     user_id: userId,
     question_id: questionId,
     reply: reply,
-    time: currentDateTime,
+    time: currentUTCDateTime(),
   }
 
   await db.query(`INSERT INTO replies SET ?`, replyData)

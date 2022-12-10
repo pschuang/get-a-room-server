@@ -1,5 +1,5 @@
 const db = require('./mysqlconf')
-const dayjs = require('dayjs')
+const { currentUTCDateTime } = require('../util/convertDatetime')
 
 const getFriends = async (userId) => {
   const [friends] = await db.query(
@@ -10,13 +10,12 @@ const getFriends = async (userId) => {
 }
 
 const createFriendship = async (roomId, members) => {
-  const currentDateTime = dayjs().utc().format('YYYY-MM-DD HH:mm:ss')
   await db.query(
     'INSERT INTO friends (user_id, friend_user_id, room_id, created_at) VALUES ?',
     [
       [
-        [members[0], members[1], roomId, currentDateTime],
-        [members[1], members[0], roomId, currentDateTime],
+        [members[0], members[1], roomId, currentUTCDateTime()],
+        [members[1], members[0], roomId, currentUTCDateTime()],
       ],
     ]
   )
