@@ -12,7 +12,7 @@ const db = require('../models/mysqlconf')
 // })
 
 const getTime = async () => {
-  const [times] = await db.query(`select * from time`)
+  const [times] = await db.execute(`select * from time`)
   console.log(times)
 
   const time = times[0].time
@@ -30,11 +30,11 @@ const getTime = async () => {
 
 const insertTime = async () => {
   const datetime = Date.now()
-  await db.query(`UPDATE time SET datetime = ? WHERE id = ?`, [datetime, 16])
+  await db.execute(`UPDATE time SET datetime = ? WHERE id = ?`, [datetime, 16])
 }
 
 const getDateTime = async () => {
-  const [reply] = await db.query('SELECT * FROM replies WHERE id = 14')
+  const [reply] = await db.execute('SELECT * FROM replies WHERE id = 14')
   const time = reply[0].time
   console.log(reply)
   console.log(time)

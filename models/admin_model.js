@@ -17,7 +17,7 @@ const getAskedQuestionCount = async () => {
   )
 
   try {
-    const [result] = await db.query(
+    const [result] = await db.execute(
       'SELECT count(*) AS count FROM questions WHERE start_time > ? AND start_time < ?',
       [openTimeTodayUTC, closeTimeTodayUTC]
     )
@@ -36,7 +36,7 @@ const getOpenQuestionCount = async () => {
   )
 
   try {
-    const [result] = await db.query(
+    const [result] = await db.execute(
       'SELECT count(*) AS count FROM questions WHERE start_time > ? AND start_time < ? AND is_closed = 0',
       [openTimeTodayUTC, closeTimeTodayUTC]
     )
@@ -56,7 +56,7 @@ const getQuestionsCountByCategory = async () => {
   )
 
   try {
-    const [result] = await db.query(
+    const [result] = await db.execute(
       'SELECT count(*) AS count, categories.category FROM questions, categories WHERE questions.category_id = categories.id AND start_time > ? AND start_time < ? GROUP BY category_id;',
       [openTimeTodayUTC, closeTimeTodayUTC]
     )
@@ -75,7 +75,7 @@ const getUserCount = async () => {
   )
 
   try {
-    const [result] = await db.query(
+    const [result] = await db.execute(
       'SELECT count(*) AS count From user WHERE created_at > ? AND created_at < ?',
       [openTimeTodayUTC, closeTimeTodayUTC]
     )
@@ -96,7 +96,7 @@ const getFriendshipCount = async () => {
       DECIDE_TO_BE_FRIEND_TIME_SPAN / 1000
   )
   try {
-    const [result] = await db.query(
+    const [result] = await db.execute(
       'SELECT count(*) AS count FROM friends WHERE created_at > ? AND created_at < ?',
       [openTimeTodayUTC, closeTimeTodayUTC]
     )
@@ -111,7 +111,7 @@ const getFriendshipCount = async () => {
 
 const getQuestionsInAWeek = async () => {
   const todayUTC = currentUTCDate()
-  const [result] = await db.query(
+  const [result] = await db.execute(
     `SELECT count(*) AS count, CAST(start_time AS DATE) AS date from questions WHERE CAST(start_time AS DATE) <= ? GROUP BY CAST(start_time AS DATE) ORDER BY CAST(start_time AS DATE) DESC LIMIT 7`,
     [todayUTC]
   )
@@ -126,7 +126,7 @@ const getReplyCount = async () => {
       BULLETIN_OPEN_TIME_SPAN
     )
 
-    const [result] = await db.query(
+    const [result] = await db.execute(
       'SELECT count(*) AS count FROM replies WHERE time > ? AND time < ?',
       [openTimeTodayUTC, closeTimeTodayUTC]
     )
@@ -139,7 +139,7 @@ const getReplyCount = async () => {
 
 const getPageViewsInAWeek = async () => {
   const todayUTC = currentUTCDate()
-  const [result] = await db.query(
+  const [result] = await db.execute(
     `SELECT * FROM page_views WHERE time <= ? ORDER BY time DESC LIMIT 7`,
     [todayUTC]
   )
