@@ -1,11 +1,7 @@
-<div style="text-align:center">
-    <a href="https://easybase.io">
+
+<a href="https://get-a-room.online">
   <img src="https://get-a-room.online/get-a-room.svg" width="360px" />
 </a>
-</div>
-
-<!-- <img src="https://get-a-room.online/get-a-room.svg" width="360px" /> -->
-
 
 
 ## 📖 Table of contents
