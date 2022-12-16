@@ -8,6 +8,7 @@ const db = mysql.createPool({
   user: DB_USERNAME,
   password: DB_PASSWORD,
   database: DB_DATABASE,
+  dateStrings: true
 })
 
 module.exports = db

@@ -1,13 +1,27 @@
 require('dotenv').config
-// const cache = require('../util/cache')
+const Chatroom = require('../models/chatroom_model')
+const User = require('../models/user_model')
+const Cache = require('../models/cache_model')
 
-const getFriends = async (req, res) => {
-  const users = await cache.hgetall('1234')
-  console.log(users)
-  const arr = users.users.split(',')
-  console.log(arr)
+const getMessages = async (req, res) => {
+  const { roomId } = req.params
+  const userId = req.user.id
+  const messages = await Chatroom.getMessages(roomId)
+  const counterpartInfo = await Chatroom.getCounterPartInfo(userId, roomId)
 
-  res.send('Hello')
+  res.json({ messages, counterpartInfo })
 }
 
-module.exports = { getFriends }
+const getMatchCounterPartInfo = async (req, res) => {
+  const { roomId } = req.params
+  const userId = req.user.id
+  // 去 redis 拿 counterpart
+  const result = await Cache.getMembers(roomId)
+  const members = JSON.parse(result)
+  const counterpartId = members.find((id) => id != userId)
+
+  const user = await User.getUserInfo(counterpartId)
+  res.json({ user })
+}
+
+module.exports = { getMessages, getMatchCounterPartInfo }
