@@ -107,7 +107,7 @@ const getQuestions = async (paging, questionsPerPage, requirements = {}) => {
   const questionBindings = condition.binding.concat(limit.binding)
 
   const questionCountQuery =
-    'SELECT count(*) AS total FROM questions, categories WHERE questions.category_id = categories.id AND start_time > ? AND start_time < ?' +
+    'SELECT count(*) AS total FROM questions, categories WHERE questions.category_id = categories.id AND start_time > ? AND start_time < ? ' +
     condition.sql
 
   const questionCountBindings = condition.binding
