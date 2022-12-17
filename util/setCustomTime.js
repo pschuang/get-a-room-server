@@ -1,4 +1,4 @@
-require('dotenv').config({ path: '../.env' })
+require('dotenv').config({ path: __dirname + '/../.env' })
 const redis = require('./cache')
 const db = require('../models/mysqlconf')
 const dayjs = require('dayjs')
