@@ -14,7 +14,6 @@
 - [Tech Stack](#-Tech-Stack)
 - [Table Schema](#-Table-Schema)
 - [Architecture Diagram](#-Architecture-Diagram)
-- [Demo](#-Demo)
 - [Sprint Timeline](#-Sprint-Timeline)
 - [Future Plans](#-Future-Plans)
 
