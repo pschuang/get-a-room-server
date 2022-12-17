@@ -7,16 +7,16 @@
 
 ## 📖 Table of Contents
 
-- [Summary](#🌐-Summary)
-- [Introduction](#📂-Introduction)
-- [User Flow](#🔸-User-Flow)
-- [Features](#🎨-Features)
-- [Tech Stack](#🤖-Tech-Stack)
-- [Table Schema](#🔍-Table-Schema)
-- [Architecture Diagram](#🔹-Architecture-Diagram)
-- [Demo](#✨-Demo)
-- [Sprint Timeline](#🏃-Sprint-Timeline)
-- [Future Plans](#🚀-Future-Plans)
+- [Summary](#-Summary)
+- [Introduction](#-Introduction)
+- [User Flow](#-User-Flow)
+- [Features](#-Features)
+- [Tech Stack](#-Tech-Stack)
+- [Table Schema](#-Table-Schema)
+- [Architecture Diagram](#-Architecture-Diagram)
+- [Demo](#-Demo)
+- [Sprint Timeline](#-Sprint-Timeline)
+- [Future Plans](#-Future-Plans)
 
 ## 🌐 Summary
 
