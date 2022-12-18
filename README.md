@@ -1,8 +1,6 @@
-<p align = "center">
-  <a href="https://get-a-room.online">
-    <img src="https://get-a-room.online/get-a-room.svg" width="360px" />
-  </a>
-</p>
+<div align="center">
+  <img src="https://user-images.githubusercontent.com/105725219/208292437-dcf5616a-6cbe-4f06-b0b9-9d88c250a1c9.svg" />
+</div>
 
 
 ## 📖 Table of Contents
@@ -19,7 +17,7 @@
 
 ## 🌐 Summary
 
-This is a matchmaking website hosted on AWS EC2, built with Node.js and Express as the backend framework, React as the frontend, MySQL and Redis as the databases. I use Websockets for real-time chat and dayjs and crontab for managing time logic behind the scenes.
+This is a matchmaking website hosted on AWS EC2, built with Node.js and Express as the backend framework, React as the frontend, MySQL and Redis as the databases. I use Websockets for real-time chat and day.js and crontab for managing time logic behind the scenes.
 
 - [Back-End Repository](https://github.com/pschuang/get-a-room-server)
 - [Front-End Repository](https://github.com/pschuang/get-a-room-client)
@@ -37,7 +35,7 @@ Social media and dating apps have evolved to become platforms for people to meet
 ![](https://i.imgur.com/ZP92YwM.png)
 
 
-As a result, I came up with this idea of creating a platform where people can **match only once a day**. Moreover, A match happens when a user who posted the question picks a reply from another user, and then both can start a chatroom with time limit. 
+As a result, I came up with this idea of creating a platform where people can **match only once a day**. Moreover, a match happens when a user who posted the question picks a reply from another user, and then both can start a chatroom with time limit. 
 
 With this design, I want to create connections between users based on topics that interest them, and build a place where users can focus on talking to a person per day.
 
@@ -132,7 +130,7 @@ Use `Day.js` to deal with dates and times and measure time in <i>UTC</i>
 
 - Build a middleware to block request not within the bulletin open time
 - Show questions created on the same day
-- Randomly generate bulletin open time everyday by`Crontab`
+- Randomly generate bulletin open time everyday by `Crontab`
 
 ![image](https://user-images.githubusercontent.com/105725219/208226146-52749fb0-58ae-45bd-a8b2-6258009f1032.png)
 
