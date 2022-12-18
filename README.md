@@ -68,7 +68,7 @@ With this design, I want to create connections between users based on topics tha
 
 #### Go meet a friend!
 
-Please feel free to play with the test account below (10 accounts with the same password),\
+Please feel free to play with the test account below (10 accounts with the same password) via [GET A ROOM signin page](https://get-a-room.online/signin),\
 or sign up for yourself via [GET A ROOM signup page](https://get-a-room.online/signup)
 
 ```
@@ -89,7 +89,9 @@ password: @Test1234
 9. email: test9@test.com
 10. email: test10@test.com
 ```
-
+> **Note**
+>
+> Test accounts has been granted administrator privileges, which allows users to access dashboard page.
 
 ## 🎨 Features
 
