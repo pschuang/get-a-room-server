@@ -1,29 +1,23 @@
-<div style="text-align:center">
-    <a href="https://easybase.io">
-  <img src="https://get-a-room.online/get-a-room.svg" width="360px" />
-</a>
+<div align="center">
+  <img src="https://user-images.githubusercontent.com/105725219/208292437-dcf5616a-6cbe-4f06-b0b9-9d88c250a1c9.svg" />
 </div>
 
-<!-- <img src="https://get-a-room.online/get-a-room.svg" width="360px" /> -->
 
+## 📖 Table of Contents
 
-
-## 📖 Table of contents
-
-- [Summary](#🌐-Summary)
-- [Introduction](#📂-Introduction)
-- [User Flow](#🔸-User-Flow)
-- [Features](#🎨-Features)
-- [Tech Stack](#🤖-Tech-Stack)
-- [Table Schema](#🔍-Table-Schema)
-- [Architecture Diagram](#🔹-Architecture-Diagram)
-- [Demo](#✨-Demo)
-- [Sprint Timeline](#🏃-Sprint-Timeline)
-- [Future Plans](#🚀-Future-Plans)
+- [Summary](#-Summary)
+- [Introduction](#-Introduction)
+- [User Flow](#-User-Flow)
+- [Features](#-Features)
+- [Tech Stack](#-Tech-Stack)
+- [Table Schema](#-Table-Schema)
+- [Architecture Diagram](#-Architecture-Diagram)
+- [Sprint Timeline](#-Sprint-Timeline)
+- [Future Plans](#-Future-Plans)
 
 ## 🌐 Summary
 
-This is a matchmaking website hosted on AWS EC2, built with Node.js and Express as the backend framework, React as the frontend, MySQL and Redis as the databases. We use Websockets for real-time chat and dayjs and crontab for managing time logic behind the scenes.
+This is a matchmaking website hosted on AWS EC2, built with Node.js and Express as the backend framework, React as the frontend, MySQL and Redis as the databases. I use Websockets for real-time chat and day.js and crontab for managing time logic behind the scenes.
 
 - [Back-End Repository](https://github.com/pschuang/get-a-room-server)
 - [Front-End Repository](https://github.com/pschuang/get-a-room-client)
@@ -41,7 +35,7 @@ Social media and dating apps have evolved to become platforms for people to meet
 ![](https://i.imgur.com/ZP92YwM.png)
 
 
-As a result, I came up with this idea of creating a platform where people can **match only once a day**. Moreover, A match happens when a user who post the question picks a reply from another user, and then both can start a chatroom with time limit. 
+As a result, I came up with this idea of creating a platform where people can **match only once a day**. Moreover, a match happens when a user who posted the question picks a reply from another user, and then both can start a chatroom with time limit. 
 
 With this design, I want to create connections between users based on topics that interest them, and build a place where users can focus on talking to a person per day.
 
@@ -51,7 +45,7 @@ With this design, I want to create connections between users based on topics tha
 
 ## 🔸 User Flow
 #### Playground rule
-<div style="text-align:center">
+<div align="center">
     <img src="https://i.imgur.com/5IlWk25.png" width="50%"  />
 </div>
 <br/>
@@ -66,20 +60,38 @@ With this design, I want to create connections between users based on topics tha
 7. Either by picking a replier or getting picked, you can only be matched once per day.
 ```
 
-:::info
-**Notice:** For viewers to better understand the project, bulletin now is open from 10:00 a.m. to 10:00 p.m.
-:::
+> **Warning**
+>
+> For viewers to better understand the project, and play with the features:
+> 1. Bulletin now is open **from 10:00 a.m. to 10:00 p.m**.
+> 2. Time limit of matching chatroom is shortened to **15 seconds**.
+
 #### Go meet a friend!
 
-Please feel free to play with the test acount, or sign up for yourself via [GET A ROOM signup page](https://get-a-room.online/signup)
+Please feel free to play with the test account below (10 accounts with the same password) via [GET A ROOM signin page](https://get-a-room.online/signin),\
+or sign up for yourself via [GET A ROOM signup page](https://get-a-room.online/signup)
 
 ```
--- test account --
-email: test1@test.com
+--- test password ---
 password: @Test1234
 ```
 
-
+```
+--- test accounts ---
+1. email: test1@test.com
+2. email: test2@test.com
+3. email: test3@test.com
+4. email: test4@test.com
+5. email: test5@test.com
+6. email: test6@test.com
+7. email: test7@test.com
+8. email: test8@test.com
+9. email: test9@test.com
+10. email: test10@test.com
+```
+> **Note**
+>
+> Test accounts has been granted administrator privileges, which allows users to access dashboard page.
 
 ## 🎨 Features
 
@@ -91,10 +103,7 @@ password: @Test1234
 - Reply to questions
 - Limit of 1 question post by each user per day
 
-![](https://i.imgur.com/BnLqln1.png)
-
-
-
+![questions_create filter load](https://user-images.githubusercontent.com/105725219/208236829-cd66c435-3940-47e1-a7c8-440e53bbbe4c.gif)
 
 ### Chatroom
 
@@ -121,33 +130,44 @@ password: @Test1234
 ### Bulletin Time Limit
 Use `Day.js` to deal with dates and times and measure time in <i>UTC</i>
 
-- Build a middleware to block request not within the bulletin open time.
+- Build a middleware to block request not within the bulletin open time
 - Show questions created on the same day
-- Randomly generate bulletin open time everyday by`Crontab`
+- Randomly generate bulletin open time everyday by `Crontab`
 
-（Bulletin Page 圖 - 未開放版）
+![image](https://user-images.githubusercontent.com/105725219/208226146-52749fb0-58ae-45bd-a8b2-6258009f1032.png)
+
 
 ### Matching Mechanism
 
 Use `Redis` for real-time data analysis
-- Users can view their questions and pick a replier to go to chat.
+- Users can view their questions and pick a replier to go to chat
 - Only online users can be picked
 - Users can only be matched once per day
-- Once matched, both users enter a chatroom open for 15 minutes.
-- When time's up and if both agree, both become friends.
+- Once matched, both users enter a chatroom open for 15 minutes
+- When time's up and if both agree, both become friends
 
-（ChatRoom Page - 好友彈窗畫面）
+
+> `user1 (left)` creates reply -> `user2 (right)` views replies and pick `user1` -> `user1` gets notified
+
+![match_mechanism_part1](https://user-images.githubusercontent.com/105725219/208224888-408b61f3-ed7f-4f51-b481-695d936d2890.gif)
+
+
+> `user1 (left)` enters chatroom -> both starts chatting -> time's up and both agree to be friend
+
+![match_mechanism_part2-1 5x](https://user-images.githubusercontent.com/105725219/208224891-ff2b9c77-a245-43d7-88a7-2d6135864953.gif)
 
 ### Dashboard
 Implement dashboard's real-time data display by `Socket.IO`
 
 - Demonstrate data for monitoring the website
-    - Instant data：Online user counts, matching situation
-    - Statistics for the day (refreshed constantly)： New register counts, question counts, percentage of question categories, closed question counts, reply counts, new friendship counts
-    - Weekly statistics：Page views per day, question total counts per day
+    - Instant data: Online user counts, matching situation
+    - Statistics for the day (refreshed constantly): New register counts, question counts, percentage of question categories, closed question counts, reply counts, new friendship counts
+    - Weekly statistics: Page views per day, question total counts per day
 - Authorization: Only users assigned admin role can get access to dashboard
 - Charts (Doughnut Chart, Line Chart, Bar Chart) are created with `Chart.js`
 - Updates page views on hourly basis by `Crontab`
+
+![dashboard](https://user-images.githubusercontent.com/105725219/208225617-93f7dfc6-2923-40ce-87d7-6c25d82373c5.gif)
 
 ### Sign in / Sign up
 Use `JSON Web Token` for authentication 
@@ -191,18 +211,6 @@ Crontab
 
 ## 🔍 Table Schema
 ![](https://i.imgur.com/VfIykna.png)
-
-
-
-
-## ✨ Demo
-#### Post question / refresh bulletin / filter / load more
-![](https://i.imgur.com/JhbBdV9.gif)
-
-
-
-
-
 
 
 
