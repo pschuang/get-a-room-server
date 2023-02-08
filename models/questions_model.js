@@ -1,5 +1,5 @@
 const db = require('./mysqlconf')
-const { BULLETIN_OPEN_TIME_SPAN } = process.env
+const { BULLETIN_OPEN_TIME_SPAN, QUESTIONS_PER_PAGE } = process.env
 const {
   currentUTCDateTime,
   addTimeByMinute,
@@ -117,7 +117,12 @@ const getQuestions = async (paging, questionsPerPage, requirements = {}) => {
     questionCountQuery,
     questionCountBindings
   )
-  return { questions, questionsCount }
+
+  // 先判斷是否有 paging，再回給 controller
+  if (questionsCount[0].total > (paging + 1) * QUESTIONS_PER_PAGE) {
+    return { questions, next_paging: paging + 1 }
+  }
+  return { questions }
 }
 
 const checkStatus = async (userId) => {

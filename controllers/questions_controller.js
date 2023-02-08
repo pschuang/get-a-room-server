@@ -1,14 +1,12 @@
 require('dotenv').config
 const Questions = require('../models/questions_model')
+const { QUESTIONS_PER_PAGE } = process.env
 
 const getQuestions = async (req, res) => {
   const paging = req.query.paging ? parseInt(req.query.paging) : 0
   if (paging < 0 || isNaN(paging)) {
     return res.status(400).json({ error: 'wrong parameter' })
   }
-
-  // 定義每頁取的筆數
-  const questionsPerPage = 8
 
   // params
   const { category } = req.params
@@ -18,35 +16,25 @@ const getQuestions = async (req, res) => {
   const findQuestion = async (category) => {
     switch (category) {
       case 'all':
-        return await Questions.getQuestions(paging, questionsPerPage, {
+        return await Questions.getQuestions(paging, QUESTIONS_PER_PAGE, {
           keyword,
         })
       default:
-        return await Questions.getQuestions(paging, questionsPerPage, {
+        return await Questions.getQuestions(paging, QUESTIONS_PER_PAGE, {
           category,
           keyword,
         })
     }
   }
 
-  const { questions, questionsCount } = await findQuestion(category)
+  const data = await findQuestion(category)
 
   // 每個問題加上 replies 個數
-  for (const question of questions) {
+  for (const question of data.questions) {
     const replyCounts = await Questions.getReplyCounts(question.id)
     question.reply_counts = replyCounts[0].reply_counts
     delete question.category_id
   }
-
-  const data =
-    questionsCount[0].total > (paging + 1) * questionsPerPage
-      ? {
-          questions,
-          next_paging: paging + 1,
-        }
-      : {
-          questions,
-        }
 
   return res.json(data)
 }
